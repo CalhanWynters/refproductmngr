@@ -18,9 +18,9 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
     public FeatureScalingPriceEntity(
             FeatureIdVO id,
-            NameVO nameVO,          // Changed from String name
+            NameVO nameVO,
             DescriptionVO description,
-            LabelVO labelVO,        // Changed from String label
+            LabelVO labelVO,
             String measurementUnit,
             BigDecimal baseAmount,
             BigDecimal incrementAmount,
@@ -29,9 +29,20 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
         // Pass the new Value Objects up to the abstract superclass constructor
         super(id, nameVO, description, labelVO);
 
-        this.measurementUnit = Objects.requireNonNull(measurementUnit, "Measurement unit must not be null");
-        this.baseAmount = Objects.requireNonNull(baseAmount, "Base amount must not be null");
-        this.incrementAmount = Objects.requireNonNull(incrementAmount, "Increment amount must not be null");
+        if (measurementUnit == null) {
+            throw new IllegalArgumentException("Measurement unit must not be null.");
+        }
+        this.measurementUnit = measurementUnit;
+
+        if (baseAmount == null) {
+            throw new IllegalArgumentException("Base amount must not be null.");
+        }
+        this.baseAmount = baseAmount;
+
+        if (incrementAmount == null) {
+            throw new IllegalArgumentException("Increment amount must not be null.");
+        }
+        this.incrementAmount = incrementAmount;
 
         if (baseAmount.compareTo(BigDecimal.ZERO) < 0 || incrementAmount.compareTo(BigDecimal.ZERO) < 0 || maxQuantity < 0) {
             throw new IllegalArgumentException("Amounts and max quantity must be non-negative.");

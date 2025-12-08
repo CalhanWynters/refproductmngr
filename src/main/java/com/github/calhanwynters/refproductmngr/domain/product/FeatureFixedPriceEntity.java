@@ -1,7 +1,6 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /**
  * A feature that adds a fixed amount to the base price (e.g., gift wrapping service).
@@ -18,10 +17,12 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
             LabelVO labelVO,        // Changed from String label
             BigDecimal fixedPrice   // Changed from double fixedPrice
     ) {
-        // Pass the new Value Objects up to the abstract superclass constructor
         super(id, nameVO, description, labelVO);
 
-        Objects.requireNonNull(fixedPrice, "Fixed price must not be null.");
+        // Check for null here
+        if (fixedPrice == null) {
+            throw new IllegalArgumentException("Fixed price must not be null.");
+        }
 
         if (fixedPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Fixed price cannot be negative.");
@@ -34,11 +35,4 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
         return fixedPrice;
     }
 
-    // You could also implement an abstract method from FeatureAbstractClass here, e.g.:
-    /*
-    @Override
-    public BigDecimal calculatePriceEffect() {
-        return this.fixedPrice;
-    }
-    */
 }
