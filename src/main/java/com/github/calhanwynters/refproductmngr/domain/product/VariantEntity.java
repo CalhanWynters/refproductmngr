@@ -5,36 +5,28 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Represents an immutable product variant as a standard public class.
- * This class replaces the Java record syntax provided previously,
- * implementing immutability through final fields and a behavior-rich interface.
- */
 @SuppressWarnings("ClassCanBeRecord")
 public class VariantEntity {
-    // Explicit declaration of fields (private and final for immutability)
     private final VariantIdVO id;
-    private final String sku;
-    private final BigDecimal basePrice;
-    private final BigDecimal currentPrice;
+    private final SkuVO sku;
+    // Changed BigDecimal to PriceVO for encapsulation
+    private final PriceVO basePrice;
+    private final PriceVO currentPrice;
     private final Set<FeatureAbstractClass> features;
     private final CareInstructionVO careInstructions;
     private final WeightVO weight;
     private final VariantStatusEnums status;
 
-    /**
-     * Public Constructor for creating the VariantEntity instance, with validation.
-     */
     public VariantEntity(
             VariantIdVO id,
-            String sku,
-            BigDecimal basePrice,
-            BigDecimal currentPrice,
+            SkuVO sku,
+            // Changed parameter types to PriceVO
+            PriceVO basePrice,
+            PriceVO currentPrice,
             Set<FeatureAbstractClass> features,
             CareInstructionVO careInstructions,
             WeightVO weight,
             VariantStatusEnums status) {
-        // Validation logic
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(sku, "sku must not be null");
         Objects.requireNonNull(basePrice, "basePrice must not be null");
@@ -44,7 +36,6 @@ public class VariantEntity {
         Objects.requireNonNull(weight, "weight must not be null");
         Objects.requireNonNull(status, "status must not be null");
 
-        // Assigning parameters to the final fields
         this.id = id;
         this.sku = sku;
         this.basePrice = basePrice;
@@ -56,42 +47,39 @@ public class VariantEntity {
     }
 
     /**
-     * Factory method to create a basic new DRAFT variant.
-     * This hides the complexity of generating IDs and SKUs, and sets
-     * the initial status and current price automatically.
-     *
-     * @param basePrice The initial base monetary amount.
-     * @param weight The physical weight of the product.
-     * @param careInstructions Specific care instructions for the product.
-     * @param features Optional list of features.
-     * @return A new Variant instance initialized as DRAFT.
+     * Factory method to create a new DRAFT variant using BigDecimals,
+     * which are converted internally to PriceVOs with default currency (USD).
      */
     public static VariantEntity createDraft(
-            BigDecimal basePrice,
+            BigDecimal basePriceValue, // Takes raw value
             WeightVO weight,
             CareInstructionVO careInstructions,
             Set<FeatureAbstractClass> features) {
-        // Logic for auto-generation is encapsulated in the factory method
         VariantIdVO generatedId = VariantIdVO.generate();
-        String generatedSku = String.format("VARIANT-%s", UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        return new VariantEntity(generatedId, generatedSku, basePrice, basePrice, features, careInstructions, weight, VariantStatusEnums.DRAFT);
+        SkuVO generatedSku = new SkuVO(String.format("VARIANT-%s", UUID.randomUUID().toString().substring(0, 8).toUpperCase()));
+
+        // Convert raw BigDecimal to a default PriceVO (USD, precision 2)
+        PriceVO defaultPrice = new PriceVO(basePriceValue);
+
+        return new VariantEntity(generatedId, generatedSku, defaultPrice, defaultPrice, features, careInstructions, weight, VariantStatusEnums.DRAFT);
     }
 
-    // --- Public Getter methods (equivalent to record component accessors) ---
+    // --- Getters ---
 
     public VariantIdVO getId() {
         return id;
     }
 
-    public String getSku() {
+    public SkuVO getSku() {
         return sku;
     }
 
-    public BigDecimal getBasePrice() {
+    // Getters now return the PriceVO object
+    public PriceVO getBasePrice() {
         return basePrice;
     }
 
-    public BigDecimal getCurrentPrice() {
+    public PriceVO getCurrentPrice() {
         return currentPrice;
     }
 
@@ -111,12 +99,8 @@ public class VariantEntity {
         return status;
     }
 
-    // --- Other existing methods ---
+    // --- Other existing methods (no changes needed) ---
 
-    /**
-     * Checks if this variant has the same physical attributes as another variant.
-     * Note: This relies on correct implementations of equals() for the VO classes (CareInstructionVO, WeightVO, FeatureAbstractClass).
-     */
     public boolean hasSameAttributes(VariantEntity other) {
         if (other == null) {
             return false;
@@ -126,11 +110,9 @@ public class VariantEntity {
                 Objects.equals(features, other.features);
     }
 
-    // --- Standard Overrides (equals, hashCode, toString) ---
-    // These must be explicitly implemented when converting from a record to a class for correct behavior in collections.
-
     @Override
     public String toString() {
+        // toString relies on PriceVO's toString implementation (e.g., "$10.00")
         return String.format("Variant[id=%s, sku=%s, basePrice=%s, currentPrice=%s, features=%s, status=%s]",
                 id, sku, basePrice, currentPrice, features, status);
     }
@@ -140,6 +122,7 @@ public class VariantEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         VariantEntity that = (VariantEntity) o;
+        // Equality checks work automatically with the PriceVO Value Objects
         return Objects.equals(id, that.id) &&
                 Objects.equals(sku, that.sku) &&
                 Objects.equals(basePrice, that.basePrice) &&
@@ -156,17 +139,20 @@ public class VariantEntity {
     }
 
     // --- Behavior Methods (return new instances to maintain immutability) ---
+    // These methods now accept and use the PriceVO type
 
-    public VariantEntity changeBasePrice(BigDecimal newBasePrice) {
-        // When base price changes, current price often resets to the new base price
+    public VariantEntity changeBasePrice(PriceVO newBasePrice) {
+        Objects.requireNonNull(newBasePrice, "newBasePrice must not be null");
         return new VariantEntity(this.id, this.sku, newBasePrice, newBasePrice, this.features, this.careInstructions, this.weight, this.status);
     }
 
-    public VariantEntity changeCurrentPrice(BigDecimal newCurrentPrice) {
+    public VariantEntity changeCurrentPrice(PriceVO newCurrentPrice) {
+        Objects.requireNonNull(newCurrentPrice, "newCurrentPrice must not be null");
+        // NOTE: Business logic should ideally check if the currencies match before assignment
         return new VariantEntity(this.id, this.sku, this.basePrice, newCurrentPrice, this.features, this.careInstructions, this.weight, this.status);
     }
 
-    // --- Lifecycle/Status Behavior Methods ---
+    // --- Lifecycle/Status Behavior Methods (no changes needed) ---
 
     public boolean isActive() {
         return this.status == VariantStatusEnums.ACTIVE;
@@ -185,5 +171,12 @@ public class VariantEntity {
 
     public VariantEntity markAsDiscontinued() {
         return new VariantEntity(this.id, this.sku, this.basePrice, this.currentPrice, this.features, this.careInstructions, this.weight, VariantStatusEnums.DISCONTINUED);
+    }
+
+    // Optional: Helper method to ensure currency consistency when changing prices
+    private void ensureSameCurrency(PriceVO newPrice) {
+        if (!this.currentPrice.currency().equals(newPrice.currency())) {
+            throw new IllegalArgumentException("Cannot change price currency on an existing variant.");
+        }
     }
 }
