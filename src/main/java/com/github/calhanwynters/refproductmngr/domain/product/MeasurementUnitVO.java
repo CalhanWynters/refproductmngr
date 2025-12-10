@@ -1,45 +1,46 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * A Value Object representing a measurement unit (e.g., "kg", "m", "cm").
- * Enforces non-null and non-empty constraints.
+ * Enforces non-null, non-empty, and strict content constraints using whitelisting.
  */
 public record MeasurementUnitVO(String unit) {
 
+    // Whitelist pattern: Allows letters (upper/lower), numbers, and common symbols used in units (.,%,°)
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9.,%°]+");
+    private static final int MAX_LENGTH = 20; // Example: Units are usually short
+
     /**
-     * Compact constructor for validation, ensuring the unit is never null or empty.
+     * Compact constructor for validation, ensuring the unit is never null, empty,
+     * within length limits, and contains only allowed characters.
      */
     public MeasurementUnitVO {
-        // Check for null and empty input
         Objects.requireNonNull(unit, "Measurement unit must not be null.");
 
-        // Normalize input by trimming and validating
+        // Normalize input by trimming
         String trimmedUnit = unit.trim();
 
         if (trimmedUnit.isEmpty()) {
             throw new IllegalArgumentException("Measurement unit must not be empty.");
         }
 
-        // Do not try to assign to 'this.unit'; it is already assigned when the record is created
+        if (trimmedUnit.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("Measurement unit cannot exceed " + MAX_LENGTH + " characters.");
+        }
+
+        // --- Cybersecurity Enhancement: Whitelisting ---
+        if (!ALLOWED_CHARS_PATTERN.matcher(trimmedUnit).matches()) {
+            throw new IllegalArgumentException("Measurement unit contains forbidden characters. Only letters, numbers, '.', '%', and '°' are allowed.");
+        }
+        // ----------------------------------------------
+
+        // The record's internal 'unit' component will store the normalized value
+        unit = trimmedUnit;
     }
 
-    @Override
-    public String toString() {
-        return unit; // Returns the unit as-is
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        MeasurementUnitVO that = (MeasurementUnitVO) o;
-        return Objects.equals(unit, that.unit);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(unit); // Ensure consistent hash code
-    }
+    // Default record methods (toString, equals, hashCode, and the accessor method unit()) are sufficient.
+    // The custom overrides have been removed for cleaner code.
 }

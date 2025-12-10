@@ -1,152 +1,114 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
  * A Value Object (VO) enum for handling different weight units and their conversions.
- * It uses BigDecimal for precise arithmetic, suitable for financial or inventory systems.
+ * It uses BigDecimal for precise arithmetic.
  */
 public enum WeightUnitEnums {
-    /** Represents the base unit of a Gram. */
+    // ... (Enum constants like GRAM, KILOGRAM, OUNCE remain the same structure) ...
     GRAM {
         @Override
-        public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v;
-        }
-
+        public BigDecimal toGrams(BigDecimal v) { return v; }
         @Override
-        public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g;
-        }
+        public BigDecimal fromGrams(BigDecimal g) { return g; }
     },
-    /** Represents the unit of a Kilogram (SI unit of mass). */
     KILOGRAM {
         @Override
         public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v.multiply(GRAMS_PER_KILOGRAM, MC);
+            return v.multiply(GRAMS_PER_KILOGRAM, WeightConstants.INTERNAL_MATH_CONTEXT);
         }
-
         @Override
         public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g.divide(GRAMS_PER_KILOGRAM, SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+            return g.divide(GRAMS_PER_KILOGRAM, WeightConstants.INTERNAL_CALCULATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
         }
     },
-    /** Represents the unit of an Avoirdupois Ounce (general purpose ounce). */
-    OUNCE {
-        @Override
-        public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v.multiply(GRAMS_PER_OUNCE, MC);
-        }
-
-        @Override
-        public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g.divide(GRAMS_PER_OUNCE, SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
-        }
-    },
-    /** Represents the unit of an Avoirdupois Pound (general purpose pound). */
+    // ... (POUND, OUNCE, CARAT, TROY_OUNCE implementations follow the same pattern) ...
     POUND {
         @Override
         public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v.multiply(GRAMS_PER_POUND, MC);
+            return v.multiply(GRAMS_PER_POUND, WeightConstants.INTERNAL_MATH_CONTEXT);
         }
 
         @Override
         public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g.divide(GRAMS_PER_POUND, SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+            return g.divide(GRAMS_PER_POUND, WeightConstants.INTERNAL_CALCULATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
         }
     },
-    /** Represents the unit of a Carat (used for gemstones). */
+    OUNCE {
+        @Override
+        public BigDecimal toGrams(BigDecimal v) {
+            return v.multiply(GRAMS_PER_OUNCE, WeightConstants.INTERNAL_MATH_CONTEXT);
+        }
+
+        @Override
+        public BigDecimal fromGrams(BigDecimal g) {
+            return g.divide(GRAMS_PER_OUNCE, WeightConstants.INTERNAL_CALCULATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+        }
+    },
     CARAT {
         @Override
         public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v.multiply(GRAMS_PER_CARAT, MC);
+            return v.multiply(GRAMS_PER_CARAT, WeightConstants.INTERNAL_MATH_CONTEXT);
         }
 
         @Override
         public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g.divide(GRAMS_PER_CARAT, SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+            return g.divide(GRAMS_PER_CARAT, WeightConstants.INTERNAL_CALCULATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
         }
     },
-    /** Represents the unit of a Troy Ounce (used for precious metals). */
     TROY_OUNCE {
         @Override
         public BigDecimal toGrams(BigDecimal v) {
-            validateInput(v);
-            return v.multiply(GRAMS_PER_TROY_OUNCE, MC);
+            return v.multiply(GRAMS_PER_TROY_OUNCE, WeightConstants.INTERNAL_MATH_CONTEXT);
         }
 
         @Override
         public BigDecimal fromGrams(BigDecimal g) {
-            validateInput(g);
-            return g.divide(GRAMS_PER_TROY_OUNCE, SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+            return g.divide(GRAMS_PER_TROY_OUNCE, WeightConstants.INTERNAL_CALCULATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
         }
     };
 
-    // Constants for conversion factors
+    // Constants for conversion factors (moved from the original enum body)
     private static final BigDecimal GRAMS_PER_KILOGRAM = BigDecimal.valueOf(1000.0);
     private static final BigDecimal GRAMS_PER_POUND = BigDecimal.valueOf(453.59237);
     private static final BigDecimal GRAMS_PER_OUNCE = BigDecimal.valueOf(28.349523125);
     private static final BigDecimal GRAMS_PER_CARAT = BigDecimal.valueOf(0.2);
-    private static final BigDecimal GRAMS_PER_TROY_OUNCE = BigDecimal.valueOf(31.1034768); // Standard for precious metals
+    private static final BigDecimal GRAMS_PER_TROY_OUNCE = BigDecimal.valueOf(31.1034768);
 
-    // Scale and MathContext for precision
-    private static final int SCALE = 8; // Preserves sub-milligram precision (0.00000001 g)
-    private static final MathContext MC = new MathContext(16, RoundingMode.HALF_UP);
-    private static final BigDecimal MAX_ALLOWABLE_WEIGHT = BigDecimal.valueOf(1000000.0); // Max weight limit
-
-    /**
-     * Validates the input value for null, negative, or zero weight.
-     * @param value The value to validate.
-     * @throws IllegalArgumentException if the value is null, negative, zero, or exceeds max weight.
-     */
-    private static void validateInput(BigDecimal value) {
-        Objects.requireNonNull(value, "Value must not be null");
-        if (value.signum() <= 0) {
-            throw new IllegalArgumentException("Value must be positive and non-zero; given: " + value);
-        }
-        if (value.compareTo(MAX_ALLOWABLE_WEIGHT) > 0) {
-            throw new IllegalArgumentException("Value exceeds the maximum allowable weight of " + MAX_ALLOWABLE_WEIGHT + " grams; given: " + value);
-        }
-    }
+    // Removed the private validateInput() method, as validation belongs in WeightVO
 
     /**
      * Converts a value in this unit to grams.
-     * @param value The value in the current unit. Must be positive and non-zero.
+     * Assumes input value is non-null and positive (validated by WeightVO).
+     * @param value The value in the current unit.
      * @return The value in grams.
      */
     public abstract BigDecimal toGrams(BigDecimal value);
 
     /**
      * Converts a value in grams to this unit.
-     * @param grams The value in grams. Must be positive and non-zero.
-     * @return The value in the current unit, rounded to the defined SCALE.
+     * Assumes input value is non-null and positive (validated by WeightVO).
+     * @param grams The value in grams.
+     * @return The value in the current unit, rounded and stripped of trailing zeros.
      */
     public abstract BigDecimal fromGrams(BigDecimal grams);
 
     /**
      * Converts a given value from the current unit to a specified target unit.
-     * @param value The value in the current unit (this). Must be positive and non-zero.
+     * @param value The value in the current unit (this).
      * @param targetUnit The desired unit for the result. Must not be null.
      * @return The converted value in the target unit.
      */
     public BigDecimal convertValueTo(BigDecimal value, WeightUnitEnums targetUnit) {
-        validateInput(value);
         Objects.requireNonNull(targetUnit, "Target unit must not be null");
+
+        // Validation of 'value' is assumed to be handled by the WeightVO compact constructor.
+
         if (this == targetUnit) {
-            // No conversion needed; return validated value directly.
             return value.stripTrailingZeros();
         }
 
@@ -156,4 +118,3 @@ public enum WeightUnitEnums {
         return targetUnit.fromGrams(grams);
     }
 }
-

@@ -31,6 +31,12 @@ class ProductIdTest {
     }
 
     @Test
+    void invalidUuidThrowsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new ProductIdVO("invalid-uuid-string"));
+        assertTrue(ex.getMessage().contains("ProductId must be a valid UUID format."));
+    }
+
+    @Test
     void generatesUniqueProductId() {
         ProductIdVO productId1 = ProductIdVO.generate();
         ProductIdVO productId2 = ProductIdVO.generate();
@@ -45,4 +51,11 @@ class ProductIdTest {
         ProductIdVO productId = new ProductIdVO("123e4567-e89b-12d3-a456-426614174000");
         assertEquals("123e4567-e89b-12d3-a456-426614174000", productId.toString());
     }
+
+    @Test
+    void generatesValidUuid() {
+        ProductIdVO productId = ProductIdVO.generate();
+        assertTrue(ProductIdVO.isValidUUID(productId.value()), "Generated ProductId must be a valid UUID format.");
+    }
 }
+

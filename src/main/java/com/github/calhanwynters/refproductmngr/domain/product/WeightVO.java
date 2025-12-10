@@ -4,16 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
-/** Domain value object representing a product weight.
- * This record ensures immutability, validation, and standard weight operations.
- */
+/** Domain value object representing a product weight.* This record ensures immutability, validation, and standard weight operations.*/
 public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Comparable<WeightVO> {
-
-    // Centralized constants for weight limits and normalization scale
-    private static final BigDecimal MAX_GRAMS = BigDecimal.valueOf(100000.0); // 100 kg
-    private static final BigDecimal MIN_GRAMS = BigDecimal.valueOf(0.001); // 1 milligram
-    private static final int COMPARISON_SCALE = 8; // Scale used for internal comparison in grams
-    private static final int NORMALIZATION_SCALE = 4; // Scale for normalization
 
     // Constructor for validation and normalization
     public WeightVO {
@@ -24,30 +16,34 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Compa
             throw new IllegalArgumentException("Amount must not be negative");
         }
 
-        // Normalize the input amount before storing in the record
+        // Normalize the input amount before storing in the record using the standard scale
         amount = normalize(amount);
 
-        // Validate maximum weight in grams
-        if (unit.toGrams(amount).compareTo(MAX_GRAMS) > 0) {
-            throw new IllegalArgumentException("Amount exceeds maximum allowed weight (" + MAX_GRAMS.stripTrailingZeros().toPlainString() + "g)");
+        // Validate maximum weight in grams using the shared constant
+        if (unit.toGrams(amount).compareTo(WeightConstants.MAX_GRAMS) > 0) {
+            throw new IllegalArgumentException(
+                    "Amount exceeds maximum allowed weight (" + WeightConstants.MAX_GRAMS.stripTrailingZeros().toPlainString() + "g)"
+            );
         }
 
-        // Validate minimum weight
+        // Validate minimum weight using the shared constant
         BigDecimal weightInGrams = unit.toGrams(amount);
-        if (weightInGrams.compareTo(BigDecimal.ZERO) > 0 && weightInGrams.compareTo(MIN_GRAMS) < 0) {
-            throw new IllegalArgumentException("Amount must be greater than " + MIN_GRAMS.stripTrailingZeros().toPlainString() + "g");
+        // We allow 0 weight, but if positive, it must meet the minimum threshold.
+        if (weightInGrams.compareTo(BigDecimal.ZERO) > 0 && weightInGrams.compareTo(WeightConstants.MIN_GRAMS) < 0) {
+            throw new IllegalArgumentException(
+                    "Amount must be greater than " + WeightConstants.MIN_GRAMS.stripTrailingZeros().toPlainString() + "g"
+            );
         }
     }
 
-    /**
-     * Helper method to standardize BigDecimal formatting for this VO.
-     */
+    /*** Helper method to standardize BigDecimal formatting for this VO.*/
     private static BigDecimal normalize(BigDecimal value) {
         // Standardize the scale for the stored value in the record
-        return value.setScale(NORMALIZATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
+        return value.setScale(WeightConstants.NORMALIZATION_SCALE, RoundingMode.HALF_UP).stripTrailingZeros();
     }
 
-    // Factory methods
+    // --- Factory methods (These are what you need to ensure are present) ---
+
     public static WeightVO ofGrams(BigDecimal grams) {
         return new WeightVO(grams, WeightUnitEnums.GRAM);
     }
@@ -68,6 +64,12 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Compa
         return new WeightVO(troyOunces, WeightUnitEnums.TROY_OUNCE);
     }
 
+    public static WeightVO ofCarats(BigDecimal carats) {
+        // Note: Added this for completeness, previously missing from the original list
+        return new WeightVO(carats, WeightUnitEnums.CARAT);
+    }
+
+
     /**
      * Compares this WeightVO to another based on their value in grams.
      * This provides a natural ordering consistent with equals().
@@ -75,10 +77,21 @@ public record WeightVO(BigDecimal amount, WeightUnitEnums unit) implements Compa
     @Override
     public int compareTo(WeightVO other) {
         // Convert both weights to a common base unit (grams) for accurate comparison
-        BigDecimal thisGrams = this.unit.toGrams(this.amount).setScale(COMPARISON_SCALE, RoundingMode.HALF_UP);
-        BigDecimal otherGrams = other.unit.toGrams(other.amount).setScale(COMPARISON_SCALE, RoundingMode.HALF_UP);
-
+        BigDecimal thisGrams = this.unit.toGrams(this.amount)
+                .setScale(WeightConstants.COMPARISON_SCALE, RoundingMode.HALF_UP);
+        BigDecimal otherGrams = other.unit.toGrams(other.amount)
+                .setScale(WeightConstants.COMPARISON_SCALE, RoundingMode.HALF_UP);
         return thisGrams.compareTo(otherGrams);
     }
-}
 
+    /**
+     * Converts the current WeightVO instance into a new WeightVO instance
+     * represented in a different unit.
+     * @param targetUnit The desired unit for the new WeightVO.
+     * @return A new WeightVO in the target unit.
+     */
+    public WeightVO convertTo(WeightUnitEnums targetUnit) {
+        BigDecimal convertedAmount = this.unit.convertValueTo(this.amount, targetUnit);
+        return new WeightVO(convertedAmount, targetUnit);
+    }
+}

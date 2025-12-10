@@ -1,12 +1,18 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * A Value Object representing the name of a product, feature, or other domain concept.
- * Enforces non-null and non-blank constraints.
+ * Enforces non-null, non-blank, length, and strict content constraints using whitelisting.
  */
 public record NameVO(String value) {
+
+    // Whitelist pattern: Allows letters (upper/lower), numbers, spaces, and common punctuation (.,:;!-'")
+    // This is generally a safe set for most product names.
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9 .,:;!\\-?'\"]+");
+    private static final int MAX_LENGTH = 100;
 
     /**
      * Compact constructor for validation.
@@ -21,30 +27,20 @@ public record NameVO(String value) {
             throw new IllegalArgumentException("Name value cannot be empty or blank");
         }
 
-        // Optional: Length constraint
-        if (trimmedValue.length() > 100) { // Adjust max length as needed
-            throw new IllegalArgumentException("Name value cannot exceed 100 characters.");
+        if (trimmedValue.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("Name value cannot exceed " + MAX_LENGTH + " characters.");
         }
 
-        // Note that you do NOT need to assign trimmedValue to this.value
-        // The record constructor automatically sets this.value to the provided parameter.
+        // --- Cybersecurity Enhancement: Whitelisting ---
+        if (!ALLOWED_CHARS_PATTERN.matcher(trimmedValue).matches()) {
+            throw new IllegalArgumentException("Name contains forbidden characters. Only letters, numbers, spaces, and common punctuation are allowed.");
+        }
+        // ----------------------------------------------
+
+        // The record's internal 'value' component will store the normalized value
+        value = trimmedValue;
     }
 
-    @Override
-    public String toString() {
-        return value; // Returns the unit as-is
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        NameVO nameVO = (NameVO) o;
-        return Objects.equals(value, nameVO.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
-    }
+    // Default record methods (toString, equals, hashCode, and the accessor method value()) are sufficient.
+    // The custom overrides have been removed for cleaner code.
 }

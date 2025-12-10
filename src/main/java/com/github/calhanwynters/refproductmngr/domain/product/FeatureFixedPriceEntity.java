@@ -12,10 +12,10 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
 
     public FeatureFixedPriceEntity(
             FeatureIdVO id,
-            NameVO nameVO,          // Changed from String name
+            NameVO nameVO,
             DescriptionVO description,
-            LabelVO labelVO,        // Changed from String label
-            BigDecimal fixedPrice   // Changed from double fixedPrice
+            LabelVO labelVO,
+            BigDecimal fixedPrice
     ) {
         super(id, nameVO, description, labelVO);
 

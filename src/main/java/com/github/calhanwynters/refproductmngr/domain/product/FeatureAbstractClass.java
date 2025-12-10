@@ -17,7 +17,6 @@ public abstract class FeatureAbstractClass {
      */
     public FeatureAbstractClass(FeatureIdVO id, NameVO nameVO, DescriptionVO description, LabelVO labelVO) {
         this.id = Objects.requireNonNull(id, "Feature ID must not be null");
-        // Use the new VOs and require them to be non-null at the abstract level
         this.nameVO = Objects.requireNonNull(nameVO, "Feature Name VO must not be null");
         this.labelVO = Objects.requireNonNull(labelVO, "Feature Label VO must not be null");
 
@@ -29,8 +28,6 @@ public abstract class FeatureAbstractClass {
     public NameVO getNameVO() { return nameVO; }       // Updated getter name
     public DescriptionVO getDescription() { return description; }
     public LabelVO getLabelVO() { return labelVO; }   // Updated getter name
-
-    // ... (equals and hashCode methods remain the same as they only check the 'id') ...
 
     @Override
     public boolean equals(Object o) {

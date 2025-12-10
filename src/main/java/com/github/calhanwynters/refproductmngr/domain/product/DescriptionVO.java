@@ -1,8 +1,7 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Domain value object for product descriptions.
@@ -12,27 +11,24 @@ public record DescriptionVO(String description) {
     private static final int MIN_LENGTH = 10;
     private static final int MAX_LENGTH = 2000;
 
+    // Whitelist pattern: Allows letters, numbers, spaces, common punctuation (.,:;!?-), newlines (\n), etc.
+    private static final String ALLOWED_CHARS_REGEX = "[a-zA-Z0-9 .,:;!\\-?\\n*•\\d()\\[\\]]+";
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile(ALLOWED_CHARS_REGEX);
+
     // Constructor with validation and normalization
     public DescriptionVO {
         Objects.requireNonNull(description, "Description value cannot be null");
-        String stripped = description.strip();
-        String normalized = getString(stripped);
 
-        String[] forbiddenWords = {"forbiddenWord1", "forbiddenWord2"};
+        // 1. Normalize whitespace and trim
+        String normalized = description.strip().replaceAll("\\s+", " ");
 
-        for (String forbidden : forbiddenWords) {
-            if (description.toLowerCase().contains(forbidden)) {
-                throw new IllegalArgumentException("Instructions contain forbidden words.");
-            }
+        // --- Cybersecurity Enhancement: Whitelisting ---
+        if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Description contains forbidden characters. Only letters, numbers, spaces, and common punctuation are allowed.");
         }
+        // ----------------------------------------------
 
-        // Set the internal description to the normalized description
-        description = normalized;
-    }
-
-    private static @NonNull String getString(String stripped) {
-        String normalized = stripped.replaceAll("\\s+", " "); // Normalize white space
-
+        // 2. Validate length after normalization
         if (normalized.length() < MIN_LENGTH) {
             throw new IllegalArgumentException("Description must be at least " + MIN_LENGTH + " characters long.");
         }
@@ -41,13 +37,19 @@ public record DescriptionVO(String description) {
             throw new IllegalArgumentException("Description cannot exceed " + MAX_LENGTH + " characters.");
         }
 
-        if (normalized.contains("<") || normalized.contains(">")) {
-            throw new IllegalArgumentException("Description must not contain HTML tags.");
+        // 3. Optional business rules check (forbidden words using the normalized string)
+        String[] forbiddenWords = {"forbiddenWord1", "forbiddenWord2"};
+        for (String forbidden : forbiddenWords) {
+            if (normalized.toLowerCase().contains(forbidden.toLowerCase())) {
+                throw new IllegalArgumentException("Description contains forbidden words.");
+            }
         }
-        return normalized;
+
+        // 4. Assign the normalized and validated value to the record component
+        description = normalized;
     }
 
-    // Example domain behavior
+    // Example domain behavior (remains useful)
     public DescriptionVO truncate(int maxLength) {
         if (description.length() <= maxLength) {
             return this;
@@ -57,22 +59,6 @@ public record DescriptionVO(String description) {
         return new DescriptionVO(truncated);
     }
 
-    // Override toString
-    @Override
-    public String toString() {
-        return "DescriptionVO{" + "description='" + description + '\'' + '}';
-    }
-
-    // Override equals and hashCode
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DescriptionVO(String description1))) return false;
-        return Objects.equals(description, description1);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(description);
-    }
+    // Default equals(), hashCode(), and toString() provided by the record definition are sufficient.
+    // The custom overrides have been removed.
 }

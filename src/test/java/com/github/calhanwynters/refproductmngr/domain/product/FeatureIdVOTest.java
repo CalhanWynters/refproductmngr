@@ -20,26 +20,34 @@ class FeatureIdVOTest {
 
     @Test
     void testFeatureIdCreationWithNullValueThrowsException() {
-        // Use assertThrows to verify that a NullPointerException is thrown
         NullPointerException exception = assertThrows(NullPointerException.class, () -> new FeatureIdVO(null));
-
         assertEquals("FeatureId value cannot be null", exception.getMessage());
     }
 
     @Test
     void testFeatureIdCreationWithEmptyValueThrowsException() {
-        // Use assertThrows to verify that an IllegalArgumentException is thrown for empty string
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new FeatureIdVO(""));
-
         assertEquals("FeatureId value cannot be empty or blank", exception.getMessage());
     }
 
     @Test
     void testFeatureIdCreationWithBlankValueThrowsException() {
-        // Use assertThrows to verify that an IllegalArgumentException is thrown for blank string
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new FeatureIdVO("   \t"));
-
         assertEquals("FeatureId value cannot be empty or blank", exception.getMessage());
+    }
+
+    @Test
+    void testFeatureIdCreationWithInvalidUuidFormatThrowsException() {
+        // Use assertThrows to verify that an IllegalArgumentException is thrown for an invalid UUID
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new FeatureIdVO("invalid-uuid-format"));
+        assertEquals("FeatureId must be a valid UUID format.", exception.getMessage());
+    }
+
+    @Test
+    void testFeatureIdCreationExceedingMaxLengthThrowsException() {
+        String longUuid = UUID.randomUUID() + "extraText";  // Make it exceed MAX_LENGTH
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new FeatureIdVO(longUuid));
+        assertEquals("FeatureId cannot exceed 100 characters.", exception.getMessage());
     }
 
     @Test
@@ -51,7 +59,7 @@ class FeatureIdVOTest {
         assertNotNull(id2);
         assertNotEquals(id1.value(), id2.value(), "Generated IDs should be unique");
 
-        // Ensure the generated value is a valid UUID format (UUID.fromString would throw if invalid)
+        // Ensure the generated value is a valid UUID format
         assertDoesNotThrow(() -> UUID.fromString(id1.value()));
     }
 

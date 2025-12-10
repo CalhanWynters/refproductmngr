@@ -7,14 +7,27 @@ class SkuVOTest {
 
     @Test
     void constructor_shouldThrowException_whenSkuIsNull() {
-        assertThrows(IllegalArgumentException.class, () -> new SkuVO(null),
-                "sku cannot be null or empty");
+        NullPointerException ex = assertThrows(NullPointerException.class, () -> new SkuVO(null));
+        assertEquals("SKU cannot be null", ex.getMessage());
     }
 
     @Test
     void constructor_shouldThrowException_whenSkuIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> new SkuVO(""),
-                "sku cannot be null or empty");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new SkuVO(""));
+        assertEquals("SKU cannot be empty", ex.getMessage());
+    }
+
+    @Test
+    void constructor_shouldThrowException_whenSkuExceedsMaxLength() {
+        String longSku = "A".repeat(51); // Exceeding 50 characters
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new SkuVO(longSku));
+        assertEquals("SKU cannot exceed 50 characters.", ex.getMessage());
+    }
+
+    @Test
+    void constructor_shouldThrowException_whenSkuContainsForbiddenCharacters() {
+        assertThrows(IllegalArgumentException.class, () -> new SkuVO("INVALID@SKU"),
+                "SKU contains forbidden characters. Only letters, numbers, hyphens, and underscores are allowed.");
     }
 
     @Test

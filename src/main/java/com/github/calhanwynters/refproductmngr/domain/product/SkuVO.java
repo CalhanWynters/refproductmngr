@@ -1,14 +1,19 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Value Object representing a Stock Keeping Unit (SKU).
+ * Enforces non-null, non-empty, length, and strict content constraints using whitelisting.
  */
 public record SkuVO(String sku) {
 
+    // Whitelist pattern: Allows letters (upper/lower), numbers, hyphens, and underscores.
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9_-]+");
+    private static final int MAX_LENGTH = 50; // Common max length for SKUs
+
     public SkuVO {
-        // Use requireNonNull for null check
         Objects.requireNonNull(sku, "SKU cannot be null");
 
         // Normalize the SKU by trimming whitespace
@@ -19,23 +24,16 @@ public record SkuVO(String sku) {
             throw new IllegalArgumentException("SKU cannot be empty");
         }
 
-        // This implicit assignment happens automatically
-    }
+        if (trimmedSku.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("SKU cannot exceed " + MAX_LENGTH + " characters.");
+        }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SkuVO(String sku1))) return false; // Pattern matching in Java 16+
-        return Objects.equals(sku, sku1);
-    }
+        // --- Cybersecurity Enhancement: Whitelisting ---
+        if (!ALLOWED_CHARS_PATTERN.matcher(trimmedSku).matches()) {
+            throw new IllegalArgumentException("SKU contains forbidden characters. Only letters, numbers, hyphens, and underscores are allowed.");
+        }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(sku); // Provide a hash code for consistency in collections
-    }
-
-    @Override
-    public String toString() {
-        return sku; // Return SKU as a string
+        // Store the normalized value
+        sku = trimmedSku;
     }
 }
