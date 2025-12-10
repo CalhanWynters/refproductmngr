@@ -6,8 +6,6 @@ import java.util.Objects;
 
 /**
  * A feature where price scales based on quantity/measurement (e.g., custom length of fabric).
- * Updated to use BigDecimal for precise currency representation and calculation methods,
- * and NameVO/LabelVO for enhanced encapsulation.
  */
 public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
@@ -28,25 +26,23 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
     ) {
         super(id, nameVO, description, labelVO);
 
+        // Validation checks
         if (measurementUnit == null) {
             throw new IllegalArgumentException("Measurement unit must not be null.");
         }
-        this.measurementUnit = measurementUnit;
-
         if (baseAmount == null) {
             throw new IllegalArgumentException("Base amount must not be null.");
         }
-        this.baseAmount = baseAmount;
-
         if (incrementAmount == null) {
             throw new IllegalArgumentException("Increment amount must not be null.");
         }
-        this.incrementAmount = incrementAmount;
-
         if (baseAmount.compareTo(BigDecimal.ZERO) < 0 || incrementAmount.compareTo(BigDecimal.ZERO) < 0 || maxQuantity < 0) {
             throw new IllegalArgumentException("Amounts and max quantity must be non-negative.");
         }
 
+        this.measurementUnit = measurementUnit;
+        this.baseAmount = baseAmount;
+        this.incrementAmount = incrementAmount;
         this.maxQuantity = maxQuantity;
     }
 
@@ -85,11 +81,17 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
     }
 
     // --- Object Overrides (equals/hashCode/toString) ---
+    // The equals() and hashCode() from the abstract class are sufficient for entity identity,
+    // but were overridden in the previous code snippet to include all properties.
+    // I'll keep the previous structure but ensure correct accessor calls.
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        // Note: calling super.equals(o) here uses only the ID for equality comparison,
+        // which might conflict with including other fields below. For a domain entity,
+        // ID-based equality (from FeatureAbstractClass) is often correct.
         if (!super.equals(o)) return false;
         FeatureScalingPriceEntity that = (FeatureScalingPriceEntity) o;
         return maxQuantity == that.maxQuantity &&
@@ -107,8 +109,10 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
     public String toString() {
         return "FeatureScalingPriceEntity{" +
                 "id=" + getId() +
-                ", name='" + getNameVO().value() + '\'' + // Use the NameVO getter correctly
-                ", unit='" + measurementUnit.getUnit() + '\'' +
+                // FIX: Changed name() to value()
+                ", name='" + getNameVO().value() + '\'' +
+                // FIX: Changed getUnit() to unit() (from previous correction)
+                ", unit='" + measurementUnit.unit() + '\'' +
                 ", base=" + baseAmount +
                 ", increment=" + incrementAmount +
                 ", max=" + maxQuantity +
