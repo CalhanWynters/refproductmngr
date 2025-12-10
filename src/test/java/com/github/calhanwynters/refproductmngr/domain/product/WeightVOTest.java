@@ -17,7 +17,6 @@ public class WeightVOTest {
                 .setScale(WeightVO.WeightUnit.SCALE, WeightVO.WeightUnit.ROUNDING_MODE)
                 .stripTrailingZeros();
 
-        // The actual value returned should already be scaled/stripped by the VO methods
         assertEquals(expected, actualValue.stripTrailingZeros(), message);
     }
 
@@ -25,7 +24,6 @@ public class WeightVOTest {
     public void testCreationWithValidValues() {
         WeightVO weight = WeightVO.ofGrams(new BigDecimal("500.0"));
         assertNotNull(weight);
-        // The VO should store the normalized amount
         assertEqualsVOValue("Amount not normalized correctly", "500.0", weight.amount());
         assertEquals(WeightVO.WeightUnit.GRAM, weight.unit());
     }
@@ -72,30 +70,21 @@ public class WeightVOTest {
     @Test
     public void testConversions() {
         WeightVO weightInOunces = WeightVO.ofOunces(new BigDecimal("1")); // 1 Ounce Avoirdupois
-
-        // Check inGrams() output (rounded to SCALE 4)
         assertEqualsVOValue("inGrams() conversion failed", "28.3495", weightInOunces.inGrams());
 
-        // Convert to Gram unit and check the normalized amount
         WeightVO weightInGrams = weightInOunces.toUnit(WeightVO.WeightUnit.GRAM);
         assertEqualsVOValue("toUnit(GRAM) amount failed", "28.3495", weightInGrams.amount());
 
-        // Convert to Carat unit and check the normalized amount
         WeightVO weightInCarats = weightInGrams.toUnit(WeightVO.WeightUnit.CARAT);
         assertEqualsVOValue("toUnit(CARAT) amount failed", "141.7475", weightInCarats.amount());
 
-        // Convert to Troy Ounce unit and check the normalized amount
         WeightVO weightInTroyOunces = weightInGrams.toUnit(WeightVO.WeightUnit.TROY_OUNCE);
         assertEqualsVOValue("toUnit(TROY_OUNCE) amount failed", "0.9115", weightInTroyOunces.amount());
 
-        // Convert to Kilogram unit
         WeightVO weightInKg = weightInGrams.toUnit(WeightVO.WeightUnit.KILOGRAM);
-        // 28.3495 grams = 0.0283 kg
         assertEqualsVOValue("toUnit(KILOGRAM) amount failed", "0.0283", weightInKg.amount());
 
-        // Convert to Pound unit
         WeightVO weightInLbs = weightInGrams.toUnit(WeightVO.WeightUnit.POUND);
-        // 28.3495 grams = 0.0625 lbs (approx)
         assertEqualsVOValue("toUnit(POUND) amount failed", "0.0625", weightInLbs.amount());
     }
 
@@ -103,7 +92,6 @@ public class WeightVOTest {
     public void testAddWeights() {
         WeightVO weightA = WeightVO.ofGrams(new BigDecimal("500.0"));
         WeightVO weightB = WeightVO.ofOunces(new BigDecimal("1"));
-
         WeightVO totalWeight = weightA.add(weightB);
         // Total grams: 500.0 + 28.3495... = 528.3495
         assertEqualsVOValue("Addition failed", "528.3495", totalWeight.inGrams());
@@ -130,7 +118,6 @@ public class WeightVOTest {
         // Remaining grams: 471.6505 - 453.5924 = 18.0581
         assertEqualsVOValue("Subtraction with LB failed", "18.0581", remainingWeight2.inGrams());
 
-
         // Test subtraction resulting in negative (should throw exception)
         WeightVO smallWeight = WeightVO.ofGrams(new BigDecimal("10"));
         assertThrows(IllegalArgumentException.class, () ->
@@ -154,3 +141,6 @@ public class WeightVOTest {
         assertTrue(halfKilo.compareTo(onePound) > 0, "0.5 KG should be greater than 1 LB");
     }
 }
+
+
+

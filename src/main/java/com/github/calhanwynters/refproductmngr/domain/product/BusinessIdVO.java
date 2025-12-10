@@ -12,15 +12,29 @@ public record BusinessIdVO(String value) {
         if (value.isBlank()) {
             throw new IllegalArgumentException("BusinessId value cannot be empty or blank");
         }
+        // Optional format check, adjust as needed
+        if (!value.matches("[A-Z0-9-]+")) {
+            throw new IllegalArgumentException("BusinessId must consist of uppercase letters, numbers, and dashes.");
+        }
     }
 
     /**
-     * Generates a new BusinessId using a random UUID.
-     * @return A new instance of BusinessId.
+     * Static factory method to generate a new BusinessId using a random UUID.
+     *
+     * @return A new instance of BusinessIdVO.
      */
-    public static BusinessIdVO generate() {
-
+    public static BusinessIdVO random() {
         return new BusinessIdVO(UUID.randomUUID().toString());
+    }
+
+    /**
+     * Static factory method to create a BusinessIdVO from a specific value.
+     *
+     * @param value The specific value for the BusinessId.
+     * @return A new BusinessIdVO with the provided value.
+     */
+    public static BusinessIdVO fromValue(String value) {
+        return new BusinessIdVO(value);
     }
 
     @Override

@@ -15,7 +15,10 @@ public record PriceVO(BigDecimal value, int precision, Currency currency) {
     }
 
     public PriceVO {
-        if (value == null || value.compareTo(BigDecimal.ZERO) < 0) {
+        if (value == null) {
+            throw new IllegalArgumentException("Price cannot be null");
+        }
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Price must be non-negative");
         }
         if (precision < 0) {

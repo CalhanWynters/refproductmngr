@@ -14,6 +14,7 @@ class FeatureScalingPriceEntityTest {
     private static final NameVO NAME_VO = new NameVO("Custom Fabric");
     private static final DescriptionVO DESC_VO = new DescriptionVO("Custom length of fabric for your needs.");
     private static final LabelVO LABEL_VO = new LabelVO("Custom Fabric Length");
+    private static final MeasurementUnitVO MEASUREMENT_UNIT_VO = new MeasurementUnitVO("meters");
 
     @Test
     @DisplayName("Should create entity successfully with valid parameters")
@@ -23,14 +24,14 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
         );
 
         assertNotNull(feature);
-        assertEquals("meters", feature.getMeasurementUnit());
+        assertEquals(MEASUREMENT_UNIT_VO, feature.getMeasurementUnit());
         assertEquals(new BigDecimal("10.00"), feature.getBaseAmount());
         assertEquals(new BigDecimal("2.50"), feature.getIncrementAmount());
         assertEquals(100, feature.getMaxQuantity());
@@ -48,7 +49,7 @@ class FeatureScalingPriceEntityTest {
                 )
         );
 
-        assertEquals("Measurement unit must not be null.", exception.getMessage()); // Corrected here
+        assertEquals("Measurement unit must not be null.", exception.getMessage());
     }
 
     @Test
@@ -56,30 +57,29 @@ class FeatureScalingPriceEntityTest {
     void testCreateFeatureScalingPriceEntity_NullBaseAmount() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureScalingPriceEntity(
-                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, "meters",
+                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, MEASUREMENT_UNIT_VO,
                         null,
                         new BigDecimal("2.50"),
                         100
                 )
         );
 
-        assertEquals("Base amount must not be null.", exception.getMessage()); // Corrected here
+        assertEquals("Base amount must not be null.", exception.getMessage());
     }
-
 
     @Test
     @DisplayName("Should throw IllegalArgumentException when increment amount is null")
     void testCreateFeatureScalingPriceEntity_NullIncrementAmount() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureScalingPriceEntity(
-                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, "meters",
+                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, MEASUREMENT_UNIT_VO,
                         new BigDecimal("10.00"),
                         null,
                         100
                 )
         );
 
-        assertEquals("Increment amount must not be null.", exception.getMessage()); // Corrected here
+        assertEquals("Increment amount must not be null.", exception.getMessage());
     }
 
     @Test
@@ -87,7 +87,7 @@ class FeatureScalingPriceEntityTest {
     void testCreateFeatureScalingPriceEntity_NegativeBaseAmount() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureScalingPriceEntity(
-                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, "meters",
+                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, MEASUREMENT_UNIT_VO,
                         new BigDecimal("-10.00"),
                         new BigDecimal("2.50"),
                         100
@@ -102,7 +102,7 @@ class FeatureScalingPriceEntityTest {
     void testCreateFeatureScalingPriceEntity_NegativeIncrementAmount() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureScalingPriceEntity(
-                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, "meters",
+                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, MEASUREMENT_UNIT_VO,
                         new BigDecimal("10.00"),
                         new BigDecimal("-2.50"),
                         100
@@ -117,7 +117,7 @@ class FeatureScalingPriceEntityTest {
     void testCreateFeatureScalingPriceEntity_NegativeMaxQuantity() {
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureScalingPriceEntity(
-                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, "meters",
+                        ID_VO, NAME_VO, DESC_VO, LABEL_VO, MEASUREMENT_UNIT_VO,
                         new BigDecimal("10.00"),
                         new BigDecimal("2.50"),
                         -1
@@ -135,7 +135,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -153,7 +153,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -174,7 +174,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -195,7 +195,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -206,7 +206,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -224,7 +224,7 @@ class FeatureScalingPriceEntityTest {
                 NAME_VO,
                 DESC_VO,
                 LABEL_VO,
-                "meters",
+                MEASUREMENT_UNIT_VO,
                 new BigDecimal("10.00"),
                 new BigDecimal("2.50"),
                 100
@@ -233,7 +233,7 @@ class FeatureScalingPriceEntityTest {
         String expected = "FeatureScalingPriceEntity{" +
                 "id=" + feature.getId() +
                 ", name='" + feature.getNameVO().value() + '\'' +
-                ", unit='meters'" +
+                ", unit='" + MEASUREMENT_UNIT_VO.getUnit() + '\'' +
                 ", base=" + feature.getBaseAmount() +
                 ", increment=" + feature.getIncrementAmount() +
                 ", max=" + feature.getMaxQuantity() +

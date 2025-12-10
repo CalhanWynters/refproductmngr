@@ -1,23 +1,46 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
+import java.util.Set; // Still use Set for the incoming constructor parameter to force uniqueness check
 
-public record GalleryVO(Set<ImageUrlVO> images) {
+public record GalleryVO(List<ImageUrlVO> images) {
+
+    private static final int MIN_IMAGES = 1;
+    private static final int MAX_IMAGES = 15;
+
     public GalleryVO {
-        Objects.requireNonNull(images, "Images set cannot be null");
+        Objects.requireNonNull(images, "Images list cannot be null");
+
         if (images.isEmpty()) {
-            throw new IllegalArgumentException("A gallery must contain at least one image.");
+            throw new IllegalArgumentException("A gallery must contain at least " + MIN_IMAGES + " image(s).");
         }
-        if (images.size() > 15) {
-            throw new IllegalArgumentException("A gallery cannot contain more than 15 images.");
+        if (images.size() > MAX_IMAGES) {
+            throw new IllegalArgumentException("A gallery cannot contain more than " + MAX_IMAGES + " images.");
         }
-        images = Set.copyOf(images);
+
+        // Ensure uniqueness (Set.copyOf handles this efficiently)
+        Set<ImageUrlVO> uniqueImages = Set.copyOf(images);
+        if (uniqueImages.size() < images.size()) {
+            throw new IllegalArgumentException("Gallery contains duplicate image URLs.");
+        }
+
+        // Ensure immutability of the internal list
+        images = List.copyOf(images);
     }
 
-    // Example behavior: get the primary image (assuming the first is primary if using a List)
+    /**
+     * Retrieves the primary image, defined as the first image in the ordered list.
+     * Guaranteed to be present due to the constructor validation (min size > 0).
+     */
     public ImageUrlVO getPrimaryImage() {
-        if (images.isEmpty()) return null; // Or throw exception based on domain rules
-        return images.iterator().next();
+        return images.getFirst();
+    }
+
+    /**
+     * Returns an immutable list of the gallery images.
+     */
+    public List<ImageUrlVO> getImages() {
+        return images;
     }
 }

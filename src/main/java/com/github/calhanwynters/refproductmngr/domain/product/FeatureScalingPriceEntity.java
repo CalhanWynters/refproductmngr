@@ -11,7 +11,7 @@ import java.util.Objects;
  */
 public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
-    private final String measurementUnit;
+    private final MeasurementUnitVO measurementUnit;
     private final BigDecimal baseAmount;
     private final BigDecimal incrementAmount;
     private final int maxQuantity;
@@ -21,12 +21,11 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
             NameVO nameVO,
             DescriptionVO description,
             LabelVO labelVO,
-            String measurementUnit,
+            MeasurementUnitVO measurementUnit,
             BigDecimal baseAmount,
             BigDecimal incrementAmount,
             int maxQuantity
     ) {
-        // Pass the new Value Objects up to the abstract superclass constructor
         super(id, nameVO, description, labelVO);
 
         if (measurementUnit == null) {
@@ -53,7 +52,7 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
 
     // --- Getters for scaling parameters ---
 
-    public String getMeasurementUnit() {
+    public MeasurementUnitVO getMeasurementUnit() {
         return measurementUnit;
     }
 
@@ -109,7 +108,7 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
         return "FeatureScalingPriceEntity{" +
                 "id=" + getId() +
                 ", name='" + getNameVO().value() + '\'' + // Use the NameVO getter correctly
-                ", unit='" + measurementUnit + '\'' +
+                ", unit='" + measurementUnit.getUnit() + '\'' +
                 ", base=" + baseAmount +
                 ", increment=" + incrementAmount +
                 ", max=" + maxQuantity +
