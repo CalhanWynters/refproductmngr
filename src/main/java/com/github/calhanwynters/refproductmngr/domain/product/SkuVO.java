@@ -33,7 +33,7 @@ public record SkuVO(String sku) {
             throw new IllegalArgumentException("SKU contains forbidden characters. Only letters, numbers, hyphens, and underscores are allowed.");
         }
 
-        // Store the normalized value
+        // Store the normalized value (implicit assignment happens at the end of the constructor)
         sku = trimmedSku;
     }
 }

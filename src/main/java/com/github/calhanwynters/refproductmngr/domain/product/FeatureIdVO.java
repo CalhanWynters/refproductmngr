@@ -5,18 +5,18 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Represents a unique identifier for a feature in the system.
+ * Represents a unique identifier for a feature in the system, stored as a String internally
+ * for validation flexibility but representing a UUID structure.
  */
 public record FeatureIdVO(String value) {
 
     // Regex pattern for a standard UUID (case-insensitive)
     private static final Pattern UUID_PATTERN =
             Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
-    private static final int MAX_LENGTH = 100;
 
     /**
      * Compact constructor for validation.
-     * Ensures that the value is not null, blank, meets length constraints, and is a valid UUID format.
+     * Ensures that the value is not null, non-blank, and is a valid UUID format string.
      */
     public FeatureIdVO {
         Objects.requireNonNull(value, "FeatureId value cannot be null");
@@ -24,12 +24,7 @@ public record FeatureIdVO(String value) {
             throw new IllegalArgumentException("FeatureId value cannot be empty or blank");
         }
 
-        // Ensure the ID adheres to a specific business ID length constraint (optional)
-        if (value.length() > MAX_LENGTH) {
-            throw new IllegalArgumentException("FeatureId cannot exceed " + MAX_LENGTH + " characters.");
-        }
-
-        // Validate the input string against a known safe format (UUID)
+        // Validate the input string against a known safe format (UUID regex)
         if (!UUID_PATTERN.matcher(value).matches()) {
             throw new IllegalArgumentException("FeatureId must be a valid UUID format.");
         }
@@ -40,7 +35,6 @@ public record FeatureIdVO(String value) {
      * @return A new instance of FeatureIdVO.
      */
     public static FeatureIdVO generate() {
-        // The generated UUID string will pass the validation regex automatically.
         return new FeatureIdVO(UUID.randomUUID().toString());
     }
 
@@ -50,10 +44,14 @@ public record FeatureIdVO(String value) {
      * @return A new instance of FeatureIdVO if valid.
      */
     public static FeatureIdVO fromString(String value) {
-        // The constructor handles all validation for the input string.
         return new FeatureIdVO(value);
     }
 
-    // Default record methods (toString, equals, hashCode) are used automatically.
-    // Custom overrides have been removed for cleaner code.
+    /**
+     * Helper method to return the underlying standard UUID object if needed for external systems.
+     * @return The UUID object.
+     */
+    public UUID toUUID() {
+        return UUID.fromString(this.value);
+    }
 }

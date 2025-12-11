@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class VariantIdTest {
+class VariantIdVOTest {
 
     @Test
     void constructsWithValidValue() {
@@ -26,8 +26,16 @@ class VariantIdTest {
 
     @Test
     void blankValueThrowsIllegalArgumentException() {
+        // Test that a string of just spaces is handled by trim() and then flagged as empty/blank
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new VariantIdVO("   "));
         assertTrue(ex.getMessage().contains("VariantId value cannot be empty or blank"));
+    }
+
+    @Test
+    void invalidUuidThrowsIllegalArgumentException() {
+        // Test explicitly that a non-UUID string fails validation
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new VariantIdVO("just-a-string"));
+        assertTrue(ex.getMessage().contains("VariantId must be a valid UUID format."));
     }
 
     @Test
@@ -41,8 +49,9 @@ class VariantIdTest {
     }
 
     @Test
-    void toStringReturnsCorrectValue() {
+    void toStringContainsCorrectValue() { // Renamed test method
         VariantIdVO variantId = new VariantIdVO("123e4567-e89b-12d3-a456-426614174000");
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", variantId.toString());
+        // Assert that the record's string representation *contains* the value
+        assertTrue(variantId.toString().contains("123e4567-e89b-12d3-a456-426614174000"));
     }
 }

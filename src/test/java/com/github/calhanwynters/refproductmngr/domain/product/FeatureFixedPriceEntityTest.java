@@ -8,7 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class FeatureFixedPriceEntityTest {
 
     // Define common immutable Value Objects once to reduce boilerplate code
-    private static final FeatureIdVO ID_VO = new FeatureIdVO("gift-wrap");
+    // FIX: Use a valid UUID string to prevent ExceptionInInitializerError during class loading.
+    private static final FeatureIdVO ID_VO = new FeatureIdVO("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
     private static final NameVO NAME_VO = new NameVO("Gift Wrapping");
     private static final DescriptionVO DESC_VO = new DescriptionVO("A beautiful gift wrap for your purchase.");
     private static final LabelVO LABEL_VO = new LabelVO("Gift Wrap");
@@ -24,7 +25,6 @@ class FeatureFixedPriceEntityTest {
                 new BigDecimal("5.00")
         );
 
-        // This test now serves dual purpose: creation and getter validation
         assertNotNull(feature.getFixedPrice());
         assertEquals(new BigDecimal("5.00"), feature.getFixedPrice());
     }
@@ -32,7 +32,6 @@ class FeatureFixedPriceEntityTest {
     @Test
     @DisplayName("Should throw IllegalArgumentException when fixed price is null")
     void testCreateFeatureFixedPriceEntity_NullFixedPrice() {
-        // Using assertThrows to capture the exception thrown by the constructor
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureFixedPriceEntity(ID_VO, NAME_VO, DESC_VO, LABEL_VO, null)
         );
@@ -43,7 +42,6 @@ class FeatureFixedPriceEntityTest {
     @Test
     @DisplayName("Should throw IllegalArgumentException when fixed price is negative")
     void testCreateFeatureFixedPriceEntity_NegativeFixedPrice() {
-        // Using assertThrows to capture the exception thrown by the constructor
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 new FeatureFixedPriceEntity(ID_VO, NAME_VO, DESC_VO, LABEL_VO, new BigDecimal("-1.00"))
         );
@@ -65,8 +63,4 @@ class FeatureFixedPriceEntityTest {
         assertNotNull(feature.getFixedPrice());
         assertEquals(BigDecimal.ZERO, feature.getFixedPrice());
     }
-
-
-    // Removed the original 'testGetFixedPrice' as the functionality is fully covered
-    // by 'testCreateFeatureFixedPriceEntity_ValidParameters'
 }

@@ -4,151 +4,132 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.Objects;
-import java.util.UUID;
-
-// NOTE: These record definitions are necessary placeholders for the tests to compile.
-// In a real application, these would be separate, immutable value object classes/records.
-
-/** A placeholder for the actual NameVO, assuming it wraps a non-null string. */
-record NameVO(String name) {
-    public NameVO {
-        Objects.requireNonNull(name, "Name cannot be null");
-    }
-}
-
-/** A placeholder for the actual LabelVO, assuming it wraps a non-null string. */
-record LabelVO(String label) {
-    public LabelVO {
-        Objects.requireNonNull(label, "Label cannot be null");
-    }
-}
-
-/** A placeholder for the actual DescriptionVO, assuming it wraps a string. It can be null. */
-record DescriptionVO(String description) {}
-
-/** A placeholder for the actual FeatureIdVO, assuming it wraps a UUID. */
-record FeatureIdVO(UUID id) {
-    public FeatureIdVO {
-        Objects.requireNonNull(id, "ID cannot be null");
-    }
-    // Helper constructor to easily create VOs using strings for testing convenience
-    FeatureIdVO(String uuidString) {
-        this(UUID.fromString(uuidString));
-    }
-}
-
 
 class FeatureBasicEntityTest {
 
-    private FeatureIdVO id;
-    private NameVO nameVO;
-    private DescriptionVO description;
-    private LabelVO labelVO;
+    private FeatureIdVO validId;
+    private NameVO validName;
+    private DescriptionVO validDescription;
+    private LabelVO validLabel;
 
-    /**
-     * Set up common, valid test objects before each test run.
-     */
     @BeforeEach
     void setUp() {
-        // Use unique UUIDs for ID generation for a more realistic test setup
-        id = new FeatureIdVO(UUID.randomUUID());
-        nameVO = new NameVO("Color");
-        description = new DescriptionVO("A feature representing color.");
-        labelVO = new LabelVO("Blue");
+        validId = FeatureIdVO.generate();
+        validName = new NameVO("Basic Feature Name");
+        // Ensure this description meets the assumed minimum length validation of DescriptionVO
+        // (Assuming DescriptionVO is validated elsewhere to be a valid VO)
+        validDescription = new DescriptionVO("A description is at least 10 characters long.");
+        validLabel = new LabelVO("Feature Label");
     }
 
-    /**
-     * Test successful creation and verification of all getters.
-     */
     @Test
-    void testFeatureBasicEntityCreation() {
-        // Act
-        FeatureBasicEntity feature = new FeatureBasicEntity(id, nameVO, description, labelVO);
-
-        // Assert
-        assertNotNull(feature, "Feature should not be null after construction");
-        assertSame(id, feature.getId(), "ID should be the same instance");
-        assertSame(nameVO, feature.getNameVO(), "NameVO should be the same instance");
-        assertSame(description, feature.getDescription(), "DescriptionVO should be the same instance");
-        assertSame(labelVO, feature.getLabelVO(), "LabelVO should be the same instance");
-    }
-
-    /**
-     * Test that an entity can be created successfully even if the description is null.
-     */
-    @Test
-    void testFeatureCreationWithNullDescription() {
-        // Act
-        FeatureBasicEntity feature = new FeatureBasicEntity(id, nameVO, null, labelVO);
-
-        // Assert
-        assertNotNull(feature);
-        assertNull(feature.getDescription());
-    }
-
-    /**
-     * Test that two entities with the same ID are considered equal,
-     * regardless of their other field values.
-     */
-    @Test
-    void testFeatureBasicEntityEqualityById() {
-        // Arrange
-        UUID commonId = UUID.randomUUID();
-        // feature1 uses the standard setup VOs
-        FeatureBasicEntity feature1 = new FeatureBasicEntity(new FeatureIdVO(commonId), nameVO, description, labelVO);
-
-        // feature2 uses different name/label VOs, but the *same* ID value
-        FeatureBasicEntity feature2 = new FeatureBasicEntity(
-                new FeatureIdVO(commonId),
-                new NameVO("Different Name"),
-                new DescriptionVO("Different Desc"),
-                new LabelVO("Different Label")
+    void testFeatureBasicEntityCreation_Success() {
+        // Arrange & Act
+        FeatureBasicEntity entity = new FeatureBasicEntity(
+                validId,
+                validName,
+                validDescription,
+                validLabel
         );
 
         // Assert
-        // The equals() method in FeatureAbstractClass relies ONLY on the 'id' field
-        assertEquals(feature1, feature2, "Features with the same ID should be equal");
-        assertEquals(feature1.hashCode(), feature2.hashCode(), "Hash codes should match for equal objects");
+        assertNotNull(entity, "The entity should not be null after creation");
+        assertEquals(validId, entity.getId(), "ID should match the provided VO.");
+        assertEquals(validName, entity.getNameVO(), "Name should match the provided VO.");
+        assertEquals(validDescription, entity.getDescription(), "Description VO should match the provided VO.");
+        assertEquals(validLabel, entity.getLabelVO(), "Label VO should match the provided VO.");
     }
 
-    /**
-     * Test constructor constraints (non-null checks).
-     */
     @Test
-    void testConstructorRequiresNonNullValues() {
-        // ID must not be null
-        assertThrows(NullPointerException.class,
-                () -> new FeatureBasicEntity(null, nameVO, description, labelVO),
-                "ID cannot be null");
-
-        // NameVO must not be null
-        assertThrows(NullPointerException.class,
-                () -> new FeatureBasicEntity(id, null, description, labelVO),
-                "NameVO cannot be null");
-
-        // LabelVO must not be null
-        assertThrows(NullPointerException.class,
-                () -> new FeatureBasicEntity(id, nameVO, description, null),
-                "LabelVO cannot be null");
-
-        // Note: description can be null, tested elsewhere.
-    }
-
-    /**
-     * Test that two entities with different IDs are not equal.
-     */
-    @Test
-    void testFeatureBasicEntityInequality() {
+    void testFeatureBasicEntityCreation_NullId_ThrowsException() {
         // Arrange
-        FeatureBasicEntity feature1 = new FeatureBasicEntity(id, nameVO, description, labelVO);
+        FeatureIdVO nullId = null;
 
-        // Create a second feature with a unique, different ID
-        FeatureIdVO differentId = new FeatureIdVO(UUID.randomUUID());
-        FeatureBasicEntity feature2 = new FeatureBasicEntity(differentId, new NameVO("Shape"), new DescriptionVO("A feature representing shape."), new LabelVO("Square"));
+        // Act & Assert
+        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(nullId, validName, validDescription, validLabel));
+        // This message assumes the check is in FeatureAbstractClass constructor
+        assertEquals("Feature ID must not be null", exception.getMessage());
+    }
 
-        // Assert
-        assertNotEquals(feature1, feature2, "Features with different IDs should not be equal");
-        assertNotEquals(feature1.hashCode(), feature2.hashCode(), "Hash codes should not match for unequal objects (usually)");
+    @Test
+    void testFeatureBasicEntityCreation_NullNameVO_ThrowsException() {
+        // Arrange
+        NameVO nullName = null;
+
+        // Act & Assert
+        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(validId, nullName, validDescription,validLabel));
+        // This message assumes the check is in FeatureAbstractClass constructor
+        assertEquals("Feature Name VO must not be null", exception.getMessage());
+    }
+
+    @Test
+    void testFeatureBasicEntityCreation_NullLabelVO_ThrowsException() {
+        // Arrange
+        LabelVO nullLabel = null;
+
+        // Act & Assert
+        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(validId, validName, validDescription, nullLabel));
+        // Assert the expected error message for the null label check
+        assertEquals("Feature Label VO must not be null", exception.getMessage());
+    }
+
+    @Test
+    void testFeatureBasicEntityCreation_NullDescriptionVO_Succeeds() {
+        // FIX: The FeatureAbstractClass allows null descriptions. We test that this works as intended.
+        // Arrange
+        DescriptionVO nullDescription = null;
+
+        // Act & Assert
+        assertDoesNotThrow(() -> new FeatureBasicEntity(validId, validName, nullDescription, validLabel),
+                "Feature creation should allow a null description VO.");
+
+        FeatureBasicEntity entity = new FeatureBasicEntity(validId, validName, nullDescription, validLabel);
+        assertNull(entity.getDescription(), "The description getter should return null if a null VO was provided.");
+    }
+
+    @Test
+    void testEquality_SameId_AreEqual() {
+        // Arrange
+        // Create two entities with different VO instances for Name/Label, but the SAME ID
+        FeatureBasicEntity entity1 = new FeatureBasicEntity(
+                validId,
+                new NameVO("Name One"),
+                validDescription,
+                validLabel
+        );
+        FeatureBasicEntity entity2 = new FeatureBasicEntity(
+                validId, // Same ID
+                new NameVO("Name Two"),
+                validDescription,
+                validLabel
+        );
+
+        // Act & Assert
+        // Assuming equality is based solely on the 'id' field within FeatureAbstractClass
+        assertEquals(entity1, entity2, "Entities with the same ID should be equal.");
+        assertEquals(entity1.hashCode(), entity2.hashCode(), "Hash codes should match for equal objects.");
+    }
+
+    @Test
+    void testEquality_DifferentId_AreNotEqual() {
+        // Arrange
+        FeatureBasicEntity entity1 = new FeatureBasicEntity(
+                validId,
+                validName,
+                validDescription,
+                validLabel
+        );
+
+        FeatureIdVO differentId = FeatureIdVO.generate();
+        FeatureBasicEntity entity2 = new FeatureBasicEntity(
+                differentId, // Different ID
+                validName,
+                validDescription,
+                validLabel
+        );
+
+        // Act & Assert
+        assertNotEquals(entity1, entity2, "Entities with different IDs should not be equal.");
+        assertNotEquals(entity1.hashCode(), entity2.hashCode(), "Hash codes should not match for unequal objects.");
     }
 }

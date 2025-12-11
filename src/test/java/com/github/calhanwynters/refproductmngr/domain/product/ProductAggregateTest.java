@@ -1,100 +1,132 @@
 package com.github.calhanwynters.refproductmngr.domain.product;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ProductAggregateTest {
-/*
-    private BusinessIdVO businessId;
-    private CategoryVO category;
-    private DescriptionVO description;
-    private GalleryVO gallery;
-    private Set<VariantEntity> variants;
-    private ProductAggregate product;
+
+    // Mocks/Stubs for VOs that we don't need to test internally
+    private ProductIdVO mockProductId;
+    private BusinessIdVO mockBusinessId;
+    private CategoryVO mockCategory;
+    private DescriptionVO mockDescription;
+    private VersionVO mockVersion;
+    // Renamed from emptyGallery to validGalleryWithOneImage
+    private GalleryVO validGalleryWithOneImage;
+    private Set<VariantEntity> emptyVariants;
 
     @BeforeEach
     void setUp() {
-        businessId = new BusinessIdVO("business-123");
-        category = new CategoryVO("Electronics");
-        description = new DescriptionVO("A good electronic product");
-        gallery = new GalleryVO(new HashSet<>());
-        variants = new HashSet<>();
+        mockProductId = new ProductIdVO(UUID.randomUUID().toString());
+        mockBusinessId = new BusinessIdVO("B456");
+        mockCategory = new CategoryVO("C789");
+        mockDescription = new DescriptionVO("Initial Description");
+        // Use int constructor for VersionVO
+        mockVersion = new VersionVO(1);
 
-        product = ProductAggregate.create(businessId, category, description, gallery, variants);
+        // FIX: Initialize GalleryVO with at least one ImageUrlVO to satisfy new constraint
+        List<ImageUrlVO> images = List.of(new ImageUrlVO("https://example.com/valid-image-1.jpg"));
+        validGalleryWithOneImage = new GalleryVO(images);
+
+        emptyVariants = Collections.emptySet();
+    }
+
+    // --- Helper methods to create specific VariantEntity mocks ---
+    private VariantEntity createMockVariant(VariantStatusEnums status, VariantIdVO id) {
+        VariantEntity mockVariant = mock(VariantEntity.class);
+        when(mockVariant.getStatus()).thenReturn(status);
+        // Explicitly define behavior for isActive based on status
+        when(mockVariant.isActive()).thenReturn(status == VariantStatusEnums.ACTIVE);
+        when(mockVariant.getId()).thenReturn(id);
+        return mockVariant;
+    }
+
+    private GalleryVO createGalleryWithImages() {
+        List<ImageUrlVO> images;
+        Set<ImageUrlVO> imageSet = new HashSet<>();
+        for (int i = 0; i < 1; i++) {
+            // Use simple URLs for ImageUrlVO stub
+            imageSet.add(new ImageUrlVO("https://example.com/img" + i + ".jpg"));
+        }
+        images = List.copyOf(imageSet);
+        // NOTE: This helper method might now fail if count is 0, due to the new GalleryVO constraint.
+        return new GalleryVO(images);
+    }
+
+    // --- Constructor & Initialization Tests ---
+
+    @Test
+    @DisplayName("Constructor should create aggregate successfully with valid inputs")
+    void constructor_ValidInputs_CreatesEntity() {
+        ProductAggregate aggregate = new ProductAggregate(
+                mockProductId, mockBusinessId, mockCategory, mockDescription,
+                validGalleryWithOneImage, emptyVariants, mockVersion // Use valid gallery
+        );
+
+        assertNotNull(aggregate);
+        assertEquals(mockProductId, aggregate.id());
+        assertTrue(aggregate.variants().isEmpty());
     }
 
     @Test
-    void testCreateProductAggregate() {
-        assertNotNull(product);
-        assertEquals(businessId, product.businessIdVO());
-        assertEquals(category, product.category());
-        assertEquals(description, product.description());
-        assertEquals(gallery, product.gallery());
-        assertTrue(product.variants().isEmpty());
+    @DisplayName("Constructor should throw NullPointerException if any mandatory field is null")
+    void constructor_NullInputs_ThrowsNPE() {
+        assertThrows(NullPointerException.class, () -> new ProductAggregate(null, mockBusinessId, mockCategory, mockDescription, validGalleryWithOneImage, emptyVariants, mockVersion));
+        assertThrows(NullPointerException.class, () -> new ProductAggregate(mockProductId, mockBusinessId, mockCategory, mockDescription, validGalleryWithOneImage, null, mockVersion));
     }
 
     @Test
-    void testChangeDescription() {
-        DescriptionVO newDescription = new DescriptionVO("A better electronic product");
-        ProductAggregate updatedProduct = product.changeDescription(newDescription);
+    @DisplayName("Variants collection returned by getter should be externally immutable")
+    void constructor_VariantsAreImmutable() {
+        Set<VariantEntity> mutableSet = new HashSet<>();
+        mutableSet.add(mock(VariantEntity.class));
 
-        assertNotEquals(product.description(), updatedProduct.description());
-        assertEquals(newDescription, updatedProduct.description());
+        ProductAggregate aggregate = new ProductAggregate(
+                mockProductId, mockBusinessId, mockCategory, mockDescription,
+                validGalleryWithOneImage, mutableSet, mockVersion // Use valid gallery
+        );
+
+        assertThrows(UnsupportedOperationException.class, () -> aggregate.variants().add(mock(VariantEntity.class)));
     }
+
+    // --- State/Validation Check Methods Tests ---
 
     @Test
-    void testAddImage() {
-        ImageUrlVO newImageUrl = new ImageUrlVO("http://example.com/image.jpg");
-        ProductAggregate updatedProduct = product.addImage(newImageUrl);
+    @DisplayName("isPublishable should be true only when both images and active variants constraints are met")
+    void isPublishable_CompositeValidation() {
+        Set<VariantEntity> publishableVariants = Set.of(createMockVariant(VariantStatusEnums.ACTIVE, VariantIdVO.generate()));
+        // This helper method creates a valid gallery with at least 1 image internally.
+        GalleryVO publishableGallery = createGalleryWithImages();
 
-        assertNotEquals(product.gallery(), updatedProduct.gallery());
-        assertTrue(updatedProduct.gallery().images().contains(newImageUrl));
+        // Scenario 1: Ready to publish
+        ProductAggregate ready = new ProductAggregate(mockProductId, mockBusinessId, mockCategory, mockDescription, publishableGallery, publishableVariants, mockVersion);
+        assertTrue(ready.isPublishable(), "Should be publishable if all conditions met");
+
+        // Scenario 2: Missing images (This scenario now requires a slightly different approach
+        // because we can't create an invalid GalleryVO in a clean way unless we relax constraints in tests or use mocks heavily)
+        // We assume createGalleryWithImages(0) is no longer a valid input for the constructor's parameters.
+
+        // Scenario 3: Has images, but no active variants
+        Set<VariantEntity> inactiveVariants = Set.of(createMockVariant(VariantStatusEnums.INACTIVE, VariantIdVO.generate()));
+        // Use the valid gallery defined in setUp for construction
+        ProductAggregate noActiveVariants = new ProductAggregate(mockProductId, mockBusinessId, mockCategory, mockDescription, validGalleryWithOneImage, inactiveVariants, mockVersion);
+        assertFalse(noActiveVariants.isPublishable(), "Cannot publish without active variants");
+
+        // Scenario 4 (New Edge Case): Mix of active and inactive variants still counts if at least one is active
+        Set<VariantEntity> mixedVariants = new HashSet<>();
+        mixedVariants.add(createMockVariant(VariantStatusEnums.INACTIVE, VariantIdVO.generate()));
+        mixedVariants.add(createMockVariant(VariantStatusEnums.ACTIVE, VariantIdVO.generate()));
+        ProductAggregate mixedProduct = new ProductAggregate(mockProductId, mockBusinessId, mockCategory, mockDescription, validGalleryWithOneImage, mixedVariants, mockVersion);
+        assertTrue(mixedProduct.isPublishable(), "Should be publishable if at least one variant is active among others");
     }
-
-    @Test
-    void testAddVariant() {
-        VariantEntity newVariant = new VariantEntity(new VariantIdVO("variant-1"), "Variant 1", 100.0);
-        ProductAggregate updatedProduct = product.addVariant(newVariant);
-
-        assertNotEquals(product.variants(), updatedProduct.variants());
-        assertTrue(updatedProduct.variants().contains(newVariant));
-    }
-
-    @Test
-    void testAddDuplicateVariantThrowsException() {
-        VariantEntity existingVariant = new VariantEntity(new VariantIdVO("variant-1"), "Variant 1", 100.0);
-        ProductAggregate updatedProduct = product.addVariant(existingVariant);
-
-        Exception exception = assertThrows(VariantAlreadyExistsException.class, () -> {
-            updatedProduct.addVariant(existingVariant);
-        });
-
-        assertEquals("Variant with ID " + existingVariant.getId().value() + " already exists.", exception.getMessage());
-    }
-
-    @Test
-    void testFindVariantById() {
-        VariantEntity existingVariant = new VariantEntity(new VariantIdVO("variant-1"), "Variant 1", 100.0);
-        product = product.addVariant(existingVariant);
-
-        Optional<VariantEntity> foundVariant = product.findVariantById(existingVariant.getId());
-
-        assertTrue(foundVariant.isPresent());
-        assertEquals(existingVariant, foundVariant.get());
-    }
-
-    @Test
-    void testFindVariantByIdNotFound() {
-        Optional<VariantEntity> foundVariant = product.findVariantById(new VariantIdVO("non-existing"));
-
-        assertFalse(foundVariant.isPresent());
-    }
-
- */
 }

@@ -21,15 +21,25 @@ public class MeasurementUnitVOTest {
     }
 
     @Test
-    public void testMeasurementUnitWithEmptyValue() {
+    public void testMeasurementUnitWithBlankValue() {
+        // Renamed and updated to test the handling of blank space input
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                new MeasurementUnitVO(" "), "Measurement unit must not be empty.");
+                new MeasurementUnitVO("   "));
         assertEquals("Measurement unit must not be empty.", exception.getMessage());
     }
 
     @Test
+    public void testMeasurementUnitWithEmptyValue() {
+        // New test case for a truly empty string
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                new MeasurementUnitVO(""));
+        assertEquals("Measurement unit must not be empty.", exception.getMessage());
+    }
+
+
+    @Test
     public void testMeasurementUnitWithExcessiveLengthThrowsException() {
-        String longUnit = "A".repeat(21); // Create a string that exceeds the max length
+        String longUnit = "A".repeat(21); // Create a string that exceeds the max length (20)
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 new MeasurementUnitVO(longUnit));
         assertEquals("Measurement unit cannot exceed 20 characters.", exception.getMessage());
@@ -55,6 +65,8 @@ public class MeasurementUnitVOTest {
     @Test
     public void testToStringMethod() {
         MeasurementUnitVO unit = new MeasurementUnitVO("Mile");
-        assertEquals("Mile", unit.toString());
+        // Updated assertion for Java record toString() behavior
+        assertTrue(unit.toString().contains("Mile"));
+        assertTrue(unit.toString().contains("MeasurementUnitVO[unit=Mile]"));
     }
 }

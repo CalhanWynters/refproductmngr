@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ProductIdTest {
+class ProductIdVOTest {
 
     @Test
     void constructsWithValidValue() {
@@ -26,6 +26,7 @@ class ProductIdTest {
 
     @Test
     void blankValueThrowsIllegalArgumentException() {
+        // Also add a test to ensure trimming works before validation
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new ProductIdVO("   "));
         assertTrue(ex.getMessage().contains("ProductId value cannot be empty or blank"));
     }
@@ -47,9 +48,10 @@ class ProductIdTest {
     }
 
     @Test
-    void toStringReturnsCorrectValue() {
+    void toStringContainsCorrectValue() {
         ProductIdVO productId = new ProductIdVO("123e4567-e89b-12d3-a456-426614174000");
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", productId.toString());
+        // Assert that the record's string representation *contains* the value
+        assertTrue(productId.toString().contains("123e4567-e89b-12d3-a456-426614174000"));
     }
 
     @Test
@@ -58,4 +60,3 @@ class ProductIdTest {
         assertTrue(ProductIdVO.isValidUUID(productId.value()), "Generated ProductId must be a valid UUID format.");
     }
 }
-

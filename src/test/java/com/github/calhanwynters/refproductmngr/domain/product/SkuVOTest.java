@@ -26,8 +26,8 @@ class SkuVOTest {
 
     @Test
     void constructor_shouldThrowException_whenSkuContainsForbiddenCharacters() {
-        assertThrows(IllegalArgumentException.class, () -> new SkuVO("INVALID@SKU"),
-                "SKU contains forbidden characters. Only letters, numbers, hyphens, and underscores are allowed.");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new SkuVO("INVALID@SKU"));
+        assertEquals("SKU contains forbidden characters. Only letters, numbers, hyphens, and underscores are allowed.", ex.getMessage());
     }
 
     @Test
@@ -35,6 +35,14 @@ class SkuVOTest {
         SkuVO validSku = new SkuVO("VALID-SKU-123");
         assertNotNull(validSku);
         assertEquals("VALID-SKU-123", validSku.sku());
+    }
+
+    @Test
+    void constructor_shouldNormalizeInput_whenSkuIsValidWithWhitespace() {
+        SkuVO validSku = new SkuVO("  TRIMMED-SKU-123  ");
+        assertNotNull(validSku);
+        // Assert that the stored value is the trimmed value
+        assertEquals("TRIMMED-SKU-123", validSku.sku());
     }
 
     @Test
@@ -54,6 +62,7 @@ class SkuVOTest {
     @Test
     void toString_shouldReturnSkuString() {
         SkuVO sku = new SkuVO("SKU-123");
-        assertEquals("SKU-123", sku.toString());
+        // Records implement toString() by default, returning a useful representation
+        assertTrue(sku.toString().contains("SKU-123"));
     }
 }

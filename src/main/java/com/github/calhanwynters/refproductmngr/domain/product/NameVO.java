@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 public record NameVO(String value) {
 
     // Whitelist pattern: Allows letters (upper/lower), numbers, spaces, and common punctuation (.,:;!-'")
-    // This is generally a safe set for most product names.
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9 .,:;!\\-?'\"]+");
+    // Revised to correctly include escaped parentheses \( and \).
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("[a-zA-Z0-9 .,:;!\\-?'\"\\(\\)]+");
     private static final int MAX_LENGTH = 100;
 
     /**
@@ -33,14 +33,11 @@ public record NameVO(String value) {
 
         // --- Cybersecurity Enhancement: Whitelisting ---
         if (!ALLOWED_CHARS_PATTERN.matcher(trimmedValue).matches()) {
-            throw new IllegalArgumentException("Name contains forbidden characters. Only letters, numbers, spaces, and common punctuation are allowed.");
+            throw new IllegalArgumentException("Name contains forbidden characters. Only letters, numbers, spaces, and common punctuation (including parentheses) are allowed.");
         }
         // ----------------------------------------------
 
         // The record's internal 'value' component will store the normalized value
         value = trimmedValue;
     }
-
-    // Default record methods (toString, equals, hashCode, and the accessor method value()) are sufficient.
-    // The custom overrides have been removed for cleaner code.
 }

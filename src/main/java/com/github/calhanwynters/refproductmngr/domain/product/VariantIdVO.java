@@ -13,7 +13,8 @@ public record VariantIdVO(String value) {
     // Regex pattern for a standard UUID (case-insensitive)
     private static final Pattern UUID_PATTERN =
             Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
-    private static final int MAX_LENGTH = 100;
+
+    // private static final int MAX_LENGTH = 100; // Removed, as UUID format is fixed length (36)
 
     /**
      * Compact constructor for validation.
@@ -27,9 +28,12 @@ public record VariantIdVO(String value) {
             throw new IllegalArgumentException("VariantId value cannot be empty or blank");
         }
 
+        /*
+        // Optional: If you keep the MAX_LENGTH check:
         if (trimmedValue.length() > MAX_LENGTH) {
             throw new IllegalArgumentException("VariantId cannot exceed " + MAX_LENGTH + " characters.");
         }
+        */
 
         // Validate the input string against the known safe format (UUID)
         if (!UUID_PATTERN.matcher(trimmedValue).matches()) {
@@ -41,25 +45,11 @@ public record VariantIdVO(String value) {
         value = trimmedValue;
     }
 
-    /**
-     * Static factory method to generate a new, unique VariantIdVO using a random UUID.
-     * @return A new instance of VariantIdVO.
-     */
+    // ... (generate() and fromString() factory methods remain the same) ...
     public static VariantIdVO generate() {
-        // The generated UUID string will automatically pass the validation regex.
         return new VariantIdVO(UUID.randomUUID().toString());
     }
-
-    /**
-     * Static factory method to create a VariantIdVO from a given string.
-     * The constructor handles all validation.
-     * @param id the string representation of the VariantId
-     * @return A new instance of VariantIdVO
-     */
     public static VariantIdVO fromString(String id) {
         return new VariantIdVO(id);
     }
-
-    // Default record methods (toString, equals, hashCode) are used automatically.
-    // The custom overrides are removed for cleaner code.
 }

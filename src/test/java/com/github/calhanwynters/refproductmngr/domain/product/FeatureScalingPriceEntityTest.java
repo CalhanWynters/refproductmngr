@@ -10,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class FeatureScalingPriceEntityTest {
 
     // Define common immutable Value Objects once to reduce boilerplate code
-    private static final FeatureIdVO ID_VO = new FeatureIdVO("fabric-length");
+    // FIX: Use a valid UUID string to prevent ExceptionInInitializerError during class loading.
+    private static final FeatureIdVO ID_VO = new FeatureIdVO("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
     private static final NameVO NAME_VO = new NameVO("Custom Fabric");
     private static final DescriptionVO DESC_VO = new DescriptionVO("Custom length of fabric for your needs.");
     private static final LabelVO LABEL_VO = new LabelVO("Custom Fabric Length");
@@ -107,7 +108,7 @@ class FeatureScalingPriceEntityTest {
         FeatureScalingPriceEntity feature = createValidEntity();
 
         BigDecimal totalPrice = feature.calculateTotalPrice(5);
-        // We expect exactly 22.50
+        // We expect exactly 22.50 (10.00 base + 5 * 2.50 increment)
         assertEquals(0, new BigDecimal("22.50").compareTo(totalPrice));
     }
 
@@ -157,7 +158,6 @@ class FeatureScalingPriceEntityTest {
     void testToString() {
         FeatureScalingPriceEntity feature = createValidEntity();
 
-        // FIX: Changed .getUnit() to .unit()
         String expected = "FeatureScalingPriceEntity{" +
                 "id=" + feature.getId() +
                 ", name='" + feature.getNameVO().value() + '\'' +
@@ -170,4 +170,3 @@ class FeatureScalingPriceEntityTest {
         assertEquals(expected, feature.toString());
     }
 }
-
