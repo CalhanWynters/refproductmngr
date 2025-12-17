@@ -19,10 +19,10 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
             NameVO nameVO,
             DescriptionVO description,
             LabelVO labelVO,
-            MeasurementUnitVO measurementUnit,
-            BigDecimal baseAmount,
-            BigDecimal incrementAmount,
-            int maxQuantity
+            MeasurementUnitVO measurementUnit, // Do not confuse with currency. This deals with metric or imperial units.
+            BigDecimal baseAmount,  // starting amount at 0 units
+            BigDecimal incrementAmount, // establishes price (without currency indicator) increase per unit.
+            int maxQuantity // establishes maximum quantity limit.
     ) {
         super(id, nameVO, description, labelVO);
 
