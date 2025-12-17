@@ -29,9 +29,6 @@ public record ProductAggregate(
         variants = Set.copyOf(variants);
     }
 
-    // ... [Behavior methods like changeDescription, addImage, removeImage, addVariant remain the same] ...
-    // Note: I'm omitting them here for brevity, assuming you have the fixed version from the previous response.
-
     // --- New Validation/State-Check Methods ---
 
     /**
@@ -69,6 +66,6 @@ public record ProductAggregate(
             return true; // Conventionally true if no variants exist yet
         }
         return this.variants.stream()
-                .allMatch(v -> v.getStatus() == VariantStatusEnums.DRAFT);
+                .allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
     }
 }

@@ -67,13 +67,13 @@ class ProductAggregateBehaviorTest {
 
         // Configure specific variant behavior (used widely)
         when(mockActiveVariant.isActive()).thenReturn(true);
-        when(mockActiveVariant.getStatus()).thenReturn(VariantStatusEnums.ACTIVE);
+        when(mockActiveVariant.status()).thenReturn(VariantStatusEnums.ACTIVE);
 
         when(mockInactiveVariantOne.isActive()).thenReturn(false);
-        when(mockInactiveVariantOne.getStatus()).thenReturn(VariantStatusEnums.DRAFT);
+        when(mockInactiveVariantOne.status()).thenReturn(VariantStatusEnums.DRAFT);
 
         when(mockInactiveVariantTwo.isActive()).thenReturn(false);
-        when(mockInactiveVariantTwo.getStatus()).thenReturn(VariantStatusEnums.DRAFT);
+        when(mockInactiveVariantTwo.status()).thenReturn(VariantStatusEnums.DRAFT);
 
         // --- Setup for Real Objects (used in updateDescription tests) ---
         realProductId = new ProductIdVO(UUID.randomUUID().toString());

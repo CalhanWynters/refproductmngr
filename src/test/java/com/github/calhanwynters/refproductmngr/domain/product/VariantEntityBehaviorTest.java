@@ -50,12 +50,12 @@ class VariantEntityBehaviorTest {
         assertNotSame(activeUsdVariant, updatedVariant);
 
         // Verify prices were updated correctly
-        assertEquals(newPrice, updatedVariant.getBasePrice());
-        assertEquals(newPrice, updatedVariant.getCurrentPrice(), "Current price should match the new base price after this operation");
+        assertEquals(newPrice, updatedVariant.basePrice());
+        assertEquals(newPrice, updatedVariant.currentPrice(), "Current price should match the new base price after this operation");
 
         // Verify other attributes are unchanged
-        assertEquals(activeUsdVariant.getId(), updatedVariant.getId());
-        assertEquals(activeUsdVariant.getStatus(), updatedVariant.getStatus());
+        assertEquals(activeUsdVariant.id(), updatedVariant.id());
+        assertEquals(activeUsdVariant.status(), updatedVariant.status());
     }
 
     @Test
@@ -68,10 +68,10 @@ class VariantEntityBehaviorTest {
         assertNotSame(activeUsdVariant, updatedVariant);
 
         // Verify the current price was updated
-        assertEquals(salePrice, updatedVariant.getCurrentPrice());
+        assertEquals(salePrice, updatedVariant.currentPrice());
 
         // Verify the base price remains unchanged
-        assertEquals(initialBasePrice, updatedVariant.getBasePrice(), "Base price should not change during current price update");
+        assertEquals(initialBasePrice, updatedVariant.basePrice(), "Base price should not change during current price update");
     }
 
     @Test
@@ -90,7 +90,7 @@ class VariantEntityBehaviorTest {
         VariantEntity inactiveVariant = VariantEntityBehavior.deactivate(activeUsdVariant);
 
         assertNotSame(activeUsdVariant, inactiveVariant);
-        assertEquals(VariantStatusEnums.INACTIVE, inactiveVariant.getStatus());
+        assertEquals(VariantStatusEnums.INACTIVE, inactiveVariant.status());
         assertTrue(activeUsdVariant.isActive()); // Original remains active
     }
 
@@ -99,13 +99,13 @@ class VariantEntityBehaviorTest {
     void activate_ChangesStatusToActive() {
         // First create an INACTIVE variant
         VariantEntity inactiveVariant = VariantEntityBehavior.deactivate(activeUsdVariant);
-        assertEquals(VariantStatusEnums.INACTIVE, inactiveVariant.getStatus());
+        assertEquals(VariantStatusEnums.INACTIVE, inactiveVariant.status());
 
         // Now test activation
         VariantEntity activatedVariant = VariantEntityBehavior.activate(inactiveVariant);
 
         assertNotSame(inactiveVariant, activatedVariant);
-        assertEquals(VariantStatusEnums.ACTIVE, activatedVariant.getStatus());
+        assertEquals(VariantStatusEnums.ACTIVE, activatedVariant.status());
     }
 
     @Test
@@ -114,7 +114,7 @@ class VariantEntityBehaviorTest {
         VariantEntity discontinuedVariant = VariantEntityBehavior.markAsDiscontinued(activeUsdVariant);
 
         assertNotSame(activeUsdVariant, discontinuedVariant);
-        assertEquals(VariantStatusEnums.DISCONTINUED, discontinuedVariant.getStatus());
+        assertEquals(VariantStatusEnums.DISCONTINUED, discontinuedVariant.status());
     }
 
     @Test

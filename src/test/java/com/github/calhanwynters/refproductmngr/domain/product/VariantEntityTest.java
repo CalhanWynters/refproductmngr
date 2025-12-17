@@ -51,8 +51,8 @@ class VariantEntityTest {
         );
 
         assertNotNull(entity);
-        assertEquals(mockId, entity.getId());
-        assertEquals(VariantStatusEnums.ACTIVE, entity.getStatus());
+        assertEquals(mockId, entity.id());
+        assertEquals(VariantStatusEnums.ACTIVE, entity.status());
     }
 
     @Test

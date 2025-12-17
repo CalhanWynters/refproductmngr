@@ -44,7 +44,7 @@ public class ProductAggregateBehavior { // Renamed class
         if (product.variants().isEmpty()) {
             return true;
         }
-        return product.variants().stream().allMatch(v -> v.getStatus() == VariantStatusEnums.DRAFT);
+        return product.variants().stream().allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
     }
 
     // State-changing methods handled by the behavior class:

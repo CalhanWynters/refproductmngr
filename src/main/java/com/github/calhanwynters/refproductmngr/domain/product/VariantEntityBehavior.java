@@ -21,14 +21,14 @@ public class VariantEntityBehavior {
         Objects.requireNonNull(newBasePrice, "newBasePrice must not be null");
         // Business logic often dictates current price matches base price upon change
         return new VariantEntity(
-                original.getId(),
-                original.getSku(),
+                original.id(),
+                original.sku(),
                 newBasePrice,
                 newBasePrice,
-                original.getFeatures(),
-                original.getCareInstructions(),
-                original.getWeight(),
-                original.getStatus()
+                original.features(),
+                original.careInstructions(),
+                original.weight(),
+                original.status()
         );
     }
 
@@ -40,59 +40,59 @@ public class VariantEntityBehavior {
      */
     public static VariantEntity changeCurrentPrice(VariantEntity original, PriceVO newCurrentPrice) {
         Objects.requireNonNull(newCurrentPrice, "newCurrentPrice must not be null");
-        ensureSameCurrency(original.getCurrentPrice(), newCurrentPrice);
+        ensureSameCurrency(original.currentPrice(), newCurrentPrice);
         return new VariantEntity(
-                original.getId(),
-                original.getSku(),
-                original.getBasePrice(),
+                original.id(),
+                original.sku(),
+                original.basePrice(),
                 newCurrentPrice,
-                original.getFeatures(),
-                original.getCareInstructions(),
-                original.getWeight(),
-                original.getStatus()
+                original.features(),
+                original.careInstructions(),
+                original.weight(),
+                original.status()
         );
     }
 
     // --- Lifecycle/Status Behavior Methods ---
 
     public static VariantEntity activate(VariantEntity original) {
-        if (original.getStatus() == VariantStatusEnums.DISCONTINUED) {
+        if (original.status() == VariantStatusEnums.DISCONTINUED) {
             throw new IllegalStateException("Cannot activate a discontinued variant.");
         }
         return new VariantEntity(
-                original.getId(),
-                original.getSku(),
-                original.getBasePrice(),
-                original.getCurrentPrice(),
-                original.getFeatures(),
-                original.getCareInstructions(),
-                original.getWeight(),
+                original.id(),
+                original.sku(),
+                original.basePrice(),
+                original.currentPrice(),
+                original.features(),
+                original.careInstructions(),
+                original.weight(),
                 VariantStatusEnums.ACTIVE
         );
     }
 
     public static VariantEntity deactivate(VariantEntity original) {
         return new VariantEntity(
-                original.getId(),
-                original.getSku(),
-                original.getBasePrice(),
-                original.getCurrentPrice(),
-                original.getFeatures(),
-                original.getCareInstructions(),
-                original.getWeight(),
+                original.id(),
+                original.sku(),
+                original.basePrice(),
+                original.currentPrice(),
+                original.features(),
+                original.careInstructions(),
+                original.weight(),
                 VariantStatusEnums.INACTIVE
         );
     }
 
     public static VariantEntity markAsDiscontinued(VariantEntity original) {
         return new VariantEntity(
-                original.getId(),
-                original.getSku(),
-                original.getBasePrice(),
-                original.getCurrentPrice(),
-                original.getFeatures(),
-                original.getCareInstructions(),
-                original.getWeight(),
+                original.id(),
+                original.sku(),
+                original.basePrice(),
+                original.currentPrice(),
+                original.features(),
+                original.careInstructions(),
+                original.weight(),
                 VariantStatusEnums.DISCONTINUED
         );
     }

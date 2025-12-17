@@ -44,10 +44,10 @@ class ProductAggregateTest {
     // --- Helper methods to create specific VariantEntity mocks ---
     private VariantEntity createMockVariant(VariantStatusEnums status, VariantIdVO id) {
         VariantEntity mockVariant = mock(VariantEntity.class);
-        when(mockVariant.getStatus()).thenReturn(status);
+        when(mockVariant.status()).thenReturn(status);
         // Explicitly define behavior for isActive based on status
         when(mockVariant.isActive()).thenReturn(status == VariantStatusEnums.ACTIVE);
-        when(mockVariant.getId()).thenReturn(id);
+        when(mockVariant.id()).thenReturn(id);
         return mockVariant;
     }
 
