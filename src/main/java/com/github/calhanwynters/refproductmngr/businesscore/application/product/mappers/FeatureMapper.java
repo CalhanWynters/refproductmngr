@@ -4,7 +4,8 @@ import com.github.calhanwynters.refproductmngr.businesscore.application.product.
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.FeatureDTO;
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.FixedPriceFeatureDTO;
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ScalingPriceFeatureDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.*;
 
 /**
  * Central mapper for polymorphic Feature entities.

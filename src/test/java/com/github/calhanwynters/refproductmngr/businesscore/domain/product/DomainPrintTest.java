@@ -1,6 +1,9 @@
 package com.github.calhanwynters.refproductmngr.businesscore.domain.product;
 
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

@@ -2,8 +2,8 @@ package com.github.calhanwynters.refproductmngr.businesscore.application.product
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ProductQueryDTO;
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers.ProductQueryMapper;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.BusinessIdVO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductIdVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.BusinessIdVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductIdVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductQueryRepository;
 
 import java.util.List;

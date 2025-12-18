@@ -1,7 +1,11 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.*;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureAbstractClass;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureBasicEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureFixedPriceEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureScalingPriceEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
 
 import java.util.stream.Collectors;
 

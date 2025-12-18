@@ -1,7 +1,7 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ProductQueryDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductAggregate;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregate;
 
 public class ProductQueryMapper {
     private ProductQueryMapper() {}

@@ -1,8 +1,8 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ProductDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ImageUrlVO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductAggregate;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ImageUrlVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregate;
 
 import java.util.stream.Collectors;
 

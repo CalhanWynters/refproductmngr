@@ -1,9 +1,9 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ProductQueryDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.BusinessIdVO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductAggregate;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductIdVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.BusinessIdVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregate;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductIdVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,0 +1,29 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mongo_data:/data/db
+
+  postgresql:
+    image: postgres:16-alpine
+    # Alpine is available for Postgres and significantly smaller
+    ports:
+      - "5432:5432"
+    environment:
+      # Required: Sets the superuser password
+      POSTGRES_PASSWORD: postgrespassword
+      # Optional: Sets a custom username (default is 'postgres')
+      POSTGRES_USER: root
+      # Optional: Creates a specific database on startup
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  mongo_data:
+  postgres_data:

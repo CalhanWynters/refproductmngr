@@ -1,7 +1,12 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.VariantDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureBasicEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureIdVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.LabelVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.NameVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
