@@ -99,7 +99,7 @@ class FeatureMapperTest {
         FeatureBasicEntity basicEntity = (FeatureBasicEntity) entity;
         assertEquals("123e4567-e89b-12d3-a456-426614174003", basicEntity.getId().value());
         assertEquals("Color", basicEntity.getNameVO().value());
-        assertEquals("Blue Color", basicEntity.getDescription().description());
+        assertEquals("Blue Color", basicEntity.getDescription().text());
         assertEquals("Color Label", basicEntity.getLabelVO().value());
     }
 
@@ -120,7 +120,7 @@ class FeatureMapperTest {
         FeatureFixedPriceEntity fixedPriceEntity = (FeatureFixedPriceEntity) entity;
         assertEquals("123e4567-e89b-12d3-a456-426614174004", fixedPriceEntity.getId().value());
         assertEquals("Gift Wrap", fixedPriceEntity.getNameVO().value());
-        assertEquals("Wrap your product", fixedPriceEntity.getDescription().description());
+        assertEquals("Wrap your product", fixedPriceEntity.getDescription().text());
         assertEquals("Gift Wrap", fixedPriceEntity.getLabelVO().value());
         assertEquals(new BigDecimal("5.00"), fixedPriceEntity.getFixedPrice());
     }
@@ -145,7 +145,7 @@ class FeatureMapperTest {
         FeatureScalingPriceEntity scalingPriceEntity = (FeatureScalingPriceEntity) entity;
         assertEquals("123e4567-e89b-12d3-a456-426614174005", scalingPriceEntity.getId().value());
         assertEquals("Fabric", scalingPriceEntity.getNameVO().value());
-        assertEquals("Custom Length", scalingPriceEntity.getDescription().description());
+        assertEquals("Custom Length", scalingPriceEntity.getDescription().text());
         assertEquals("Fabric Label", scalingPriceEntity.getLabelVO().value());
         assertEquals("METER", scalingPriceEntity.getMeasurementUnit().unit());
         assertEquals(new BigDecimal("10.00"), scalingPriceEntity.getBaseAmount());

@@ -24,11 +24,11 @@ public record ProductAggregate(
     public ProductAggregate {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(businessIdVO, "businessId must not be null");
-        Objects.requireNonNull(category, "category must not be null");
-        Objects.requireNonNull(description, "description must not be null");
+        Objects.requireNonNull(category, "value must not be null");
+        Objects.requireNonNull(description, "text must not be null");
         Objects.requireNonNull(gallery, "gallery must not be null");
         Objects.requireNonNull(variants, "variants must not be null");
-        Objects.requireNonNull(version, "version must not be null");
+        Objects.requireNonNull(version, "num must not be null");
         // Ensure the internal collection is deeply immutable
         variants = Set.copyOf(variants);
     }

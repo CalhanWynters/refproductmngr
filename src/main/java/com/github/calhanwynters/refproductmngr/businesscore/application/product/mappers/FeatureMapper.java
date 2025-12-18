@@ -26,7 +26,7 @@ public final class FeatureMapper {
         String id = entity.getId().value();
         String name = entity.getNameVO().value();
         String label = entity.getLabelVO().value();
-        String desc = entity.getDescription() != null ? entity.getDescription().description() : null;
+        String desc = entity.getDescription() != null ? entity.getDescription().text() : null;
 
         return switch (entity) {
             case FeatureBasicEntity basic ->
@@ -42,7 +42,7 @@ public final class FeatureMapper {
                             e.getIncrementAmount(),
                             e.getMaxQuantity());
 
-            default -> throw new IllegalArgumentException("Unknown feature category: " + entity.getClass());
+            default -> throw new IllegalArgumentException("Unknown feature value: " + entity.getClass());
         };
 
     }

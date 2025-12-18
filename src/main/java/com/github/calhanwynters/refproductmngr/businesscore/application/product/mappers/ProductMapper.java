@@ -21,7 +21,7 @@ public final class ProductMapper {
                 aggregate.id().value(),
                 aggregate.businessIdVO().value(),
                 aggregate.category().value(),
-                aggregate.description().description(),
+                aggregate.description().text(),
                 // Extracting String URLs from List<ImageUrlVO>
                 aggregate.gallery().images().stream()
                         .map(ImageUrlVO::url)
@@ -29,7 +29,7 @@ public final class ProductMapper {
                 aggregate.variants().stream()
                         .map(VariantMapper::toDTO)
                         .collect(Collectors.toSet()),
-                aggregate.version().version(),
+                aggregate.version().num(),
                 aggregate.isPublishable()
         );
     }

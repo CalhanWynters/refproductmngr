@@ -39,7 +39,7 @@ public final class VariantMapper {
      * Internal polymorphic mapping using Java 2025 pattern matching.
      */
     private static FeatureDTO mapFeatureToDTO(FeatureAbstractClass feature) {
-        String desc = feature.getDescription() != null ? feature.getDescription().description() : null;
+        String desc = feature.getDescription() != null ? feature.getDescription().text() : null;
 
         return switch (feature) {
             case FeatureBasicEntity f ->

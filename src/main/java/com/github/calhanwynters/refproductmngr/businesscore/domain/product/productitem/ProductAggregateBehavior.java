@@ -56,8 +56,8 @@ public class ProductAggregateBehavior { // Renamed class
     /**
      * Example of a state-changing operation handled by the behavior class.
      * @param currentProduct The product to update.
-     * @param newDescription The new description to apply.
-     * @return A new instance of ProductAggregate with the updated description.
+     * @param newDescription The new text to apply.
+     * @return A new instance of ProductAggregate with the updated text.
      */
     public ProductAggregate updateDescription(ProductAggregate currentProduct, DescriptionVO newDescription) {
         if (currentProduct.description().equals(newDescription)) {

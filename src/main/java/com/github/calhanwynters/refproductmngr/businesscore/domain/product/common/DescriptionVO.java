@@ -5,9 +5,9 @@ import java.util.regex.Pattern;
 
 /**
  * Domain value object for product descriptions.
- * Encapsulates validation and normalization rules for a description string.
+ * Encapsulates validation and normalization rules for a text string.
  */
-public record DescriptionVO(String description) {
+public record DescriptionVO(String text) {
     private static final int MIN_LENGTH = 10;
     private static final int MAX_LENGTH = 2000;
 
@@ -17,10 +17,10 @@ public record DescriptionVO(String description) {
 
     // Constructor with validation and normalization
     public DescriptionVO {
-        Objects.requireNonNull(description, "Description value cannot be null");
+        Objects.requireNonNull(text, "Description value cannot be null");
 
         // 1. Normalize whitespace and trim
-        String normalized = description.strip().replaceAll("\\s+", " ");
+        String normalized = text.strip().replaceAll("\\s+", " ");
 
         // --- Cybersecurity Enhancement: Whitelisting ---
         if (!ALLOWED_CHARS_PATTERN.matcher(normalized).matches()) {
@@ -46,16 +46,16 @@ public record DescriptionVO(String description) {
         }
 
         // 4. Assign the normalized and validated value to the record component
-        description = normalized;
+        text = normalized;
     }
 
     // Example domain behavior (remains useful)
     public DescriptionVO truncate(int maxLength) {
-        if (description.length() <= maxLength) {
+        if (text.length() <= maxLength) {
             return this;
         }
-        // Return a new description object with the truncated string
-        String truncated = description.substring(0, maxLength - 3) + "...";
+        // Return a new text object with the truncated string
+        String truncated = text.substring(0, maxLength - 3) + "...";
         return new DescriptionVO(truncated);
     }
 

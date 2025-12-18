@@ -21,7 +21,7 @@ public class DomainPrintTest {
         // Arrange
         FeatureIdVO id = FeatureIdVO.generate();
         NameVO name = new NameVO("Sample Feature Name");
-        DescriptionVO description = new DescriptionVO("This is a sample feature description for testing purposes.");
+        DescriptionVO description = new DescriptionVO("This is a sample feature text for testing purposes.");
         LabelVO label = new LabelVO("Sample Label");
 
         FeatureBasicEntity entity = new FeatureBasicEntity(id, name, description, label);

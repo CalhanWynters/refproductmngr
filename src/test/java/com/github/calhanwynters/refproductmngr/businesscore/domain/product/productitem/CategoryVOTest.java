@@ -16,13 +16,13 @@ class CategoryVOTest {
     @Test
     void testNullCategoryThrowsException() {
         Exception exception = assertThrows(NullPointerException.class, () -> new CategoryVO(null));
-        assertEquals("category must not be null", exception.getMessage());
+        assertEquals("value must not be null", exception.getMessage());
     }
 
     @Test
     void testEmptyCategoryThrowsException() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> new CategoryVO("   ")); // Spaces only
-        assertEquals("category cannot be empty", exception.getMessage());
+        assertEquals("value cannot be empty", exception.getMessage());
     }
 
     @Test
@@ -57,6 +57,6 @@ class CategoryVOTest {
     @Test
     void testToStringFormat() {
         CategoryVO category = new CategoryVO("Furniture");
-        assertEquals("CategoryVO{category='Furniture'}", category.toString());
+        assertEquals("CategoryVO{value='Furniture'}", category.toString());
     }
 }

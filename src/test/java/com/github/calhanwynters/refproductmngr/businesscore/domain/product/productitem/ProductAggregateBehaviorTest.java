@@ -143,14 +143,14 @@ class ProductAggregateBehaviorTest {
     }
 
     @Test
-    @DisplayName("updateDescription should return a new aggregate with updated description and incremented version")
+    @DisplayName("updateDescription should return a new aggregate with updated text and incremented num")
     void updateDescription_NewDescription_ReturnsNewAggregateWithUpdatedFields() {
         // ARRANGE: Use *real* objects here (Fixes MissingMethodInvocationException)
         ProductAggregate currentRealAggregate = new ProductAggregate(
                 realProductId, realBusinessId, realCategory, realDescription,
                 realGallery, Collections.emptySet(), realVersion
         );
-        DescriptionVO newDescription = new DescriptionVO("Updated description");
+        DescriptionVO newDescription = new DescriptionVO("Updated text");
 
         // ACT
         ProductAggregate updatedAggregate = behavior.updateDescription(currentRealAggregate, newDescription);
@@ -159,13 +159,13 @@ class ProductAggregateBehaviorTest {
         assertNotNull(updatedAggregate);
         assertNotSame(currentRealAggregate, updatedAggregate, "Should return a new instance (immutability pattern)");
         assertEquals(newDescription, updatedAggregate.description());
-        // FIX: Use .version() accessor for the record field (fixes Cannot Resolve Method error)
-        assertEquals(2, updatedAggregate.version().version(), "Version should be incremented from 1 to 2");
+        // FIX: Use .num() accessor for the record field (fixes Cannot Resolve Method error)
+        assertEquals(2, updatedAggregate.version().num(), "Version should be incremented from 1 to 2");
         assertEquals(currentRealAggregate.id(), updatedAggregate.id(), "ID should remain the same");
     }
 
     @Test
-    @DisplayName("updateDescription should return the same aggregate instance if description is identical")
+    @DisplayName("updateDescription should return the same aggregate instance if text is identical")
     void updateDescription_SameDescription_ReturnsSameInstance() {
         // ARRANGE: Use *real* objects here (Fixes MissingMethodInvocationException)
         ProductAggregate currentRealAggregate = new ProductAggregate(
@@ -179,7 +179,7 @@ class ProductAggregateBehaviorTest {
 
         // ASSERT
         assertSame(currentRealAggregate, updatedAggregate, "Should return the exact same instance if no change is needed");
-        // FIX: Use .version() accessor for the record field
-        assertEquals(1, updatedAggregate.version().version(), "Version should not increment if input is the same");
+        // FIX: Use .num() accessor for the record field
+        assertEquals(1, updatedAggregate.version().num(), "Version should not increment if input is the same");
     }
 }

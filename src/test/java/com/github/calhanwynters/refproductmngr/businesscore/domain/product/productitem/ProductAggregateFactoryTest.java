@@ -42,7 +42,7 @@ class ProductAggregateFactoryTest {
         initialVariantsSet = Set.of(mockVariant);
     }
 
-    // --- Test create(businessIdVO, category, description, gallery, version, initialVariants) ---
+    // --- Test create(businessIdVO, value, text, gallery, num, initialVariants) ---
 
     @Test
     @DisplayName("Create with initial variants should return a valid ProductAggregate with all fields set")
@@ -85,7 +85,7 @@ class ProductAggregateFactoryTest {
     }
 
 
-    // --- Test create(businessIdVO, category, description, gallery, version) (Overload without variants) ---
+    // --- Test create(businessIdVO, value, text, gallery, num) (Overload without variants) ---
 
     @Test
     @DisplayName("Create without explicit variants should default to an empty variants set")

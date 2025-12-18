@@ -16,21 +16,21 @@ class VersionVOTest {
     void constructor_shouldCreateObject_whenVersionIsZero() {
         VersionVO version = new VersionVO(0);
         assertNotNull(version);
-        assertEquals(0, version.version());
+        assertEquals(0, version.num());
     }
 
     @Test
     void constructor_shouldCreateObject_whenVersionIsPositive() {
         VersionVO version = new VersionVO(1);
         assertNotNull(version);
-        assertEquals(1, version.version());
+        assertEquals(1, version.num());
     }
 
     @Test
     void constructor_shouldCreateObject_whenVersionIsLargeValue() {
         VersionVO version = new VersionVO(1000);
         assertNotNull(version);
-        assertEquals(1000, version.version());
+        assertEquals(1000, version.num());
     }
 
     // --- New Tests for nextVersion() ---
@@ -39,7 +39,7 @@ class VersionVOTest {
     void nextVersion_shouldIncrementVersionByOne() {
         VersionVO initialVersion = new VersionVO(5);
         VersionVO nextVersion = initialVersion.nextVersion();
-        assertEquals(6, nextVersion.version());
+        assertEquals(6, nextVersion.num());
     }
 
     @Test
@@ -48,8 +48,8 @@ class VersionVOTest {
         // Call nextVersion(), but verify the original object remains unchanged
         VersionVO nextVersion = initialVersion.nextVersion();
 
-        assertEquals(5, initialVersion.version(), "Original VersionVO object should remain immutable");
-        assertEquals(6, nextVersion.version(), "New VersionVO object should have the incremented value");
+        assertEquals(5, initialVersion.num(), "Original VersionVO object should remain immutable");
+        assertEquals(6, nextVersion.num(), "New VersionVO object should have the incremented value");
         assertNotSame(initialVersion, nextVersion, "nextVersion() should return a new instance, not modify the original");
     }
 
@@ -57,7 +57,7 @@ class VersionVOTest {
     void nextVersion_startingFromZero() {
         VersionVO initialVersion = new VersionVO(0);
         VersionVO nextVersion = initialVersion.nextVersion();
-        assertEquals(1, nextVersion.version());
+        assertEquals(1, nextVersion.num());
     }
 
     @Test
@@ -67,9 +67,9 @@ class VersionVOTest {
         VersionVO v2 = v1.nextVersion();
         VersionVO v3 = v2.nextVersion();
 
-        assertEquals(0, initial.version());
-        assertEquals(1, v1.version());
-        assertEquals(2, v2.version());
-        assertEquals(3, v3.version());
+        assertEquals(0, initial.num());
+        assertEquals(1, v1.num());
+        assertEquals(2, v2.num());
+        assertEquals(3, v3.num());
     }
 }

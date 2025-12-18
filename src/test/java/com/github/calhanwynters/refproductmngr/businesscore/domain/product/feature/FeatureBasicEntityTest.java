@@ -17,9 +17,9 @@ class FeatureBasicEntityTest {
     void setUp() {
         validId = FeatureIdVO.generate();
         validName = new NameVO("Basic Feature Name");
-        // Ensure this description meets the assumed minimum length validation of DescriptionVO
+        // Ensure this text meets the assumed minimum length validation of DescriptionVO
         // (Assuming DescriptionVO is validated elsewhere to be a valid VO)
-        validDescription = new DescriptionVO("A description is at least 10 characters long.");
+        validDescription = new DescriptionVO("A text is at least 10 characters long.");
         validLabel = new LabelVO("Feature Label");
     }
 
@@ -82,10 +82,10 @@ class FeatureBasicEntityTest {
 
         // Act & Assert
         assertDoesNotThrow(() -> new FeatureBasicEntity(validId, validName, nullDescription, validLabel),
-                "Feature creation should allow a null description VO.");
+                "Feature creation should allow a null text VO.");
 
         FeatureBasicEntity entity = new FeatureBasicEntity(validId, validName, nullDescription, validLabel);
-        assertNull(entity.getDescription(), "The description getter should return null if a null VO was provided.");
+        assertNull(entity.getDescription(), "The text getter should return null if a null VO was provided.");
     }
 
     @Test
