@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ProductRepositoryImpl implements ProductQueryRepository {
     @Override
-    public List<ProductAggregate> findProductsByBusinessIdAndCategory(ProductIdVO id, BusinessIdVO businessId) {
+    public List<ProductAggregate> findProductByProductIdAndBusinessId(ProductIdVO id, BusinessIdVO businessId) {
         // Query the database and return a list of ProductAggregate
         // Plan for MongoDB
         return List.of(); // PLACEHOLDER

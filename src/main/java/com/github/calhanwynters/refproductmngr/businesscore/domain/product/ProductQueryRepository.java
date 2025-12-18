@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ProductQueryRepository {
 
-    List<ProductAggregate> findProductsByBusinessIdAndCategory(ProductIdVO id, BusinessIdVO businessId);
+    List<ProductAggregate> findProductByProductIdAndBusinessId(ProductIdVO id, BusinessIdVO businessId);
     // Additional methods as necessary
 
 }

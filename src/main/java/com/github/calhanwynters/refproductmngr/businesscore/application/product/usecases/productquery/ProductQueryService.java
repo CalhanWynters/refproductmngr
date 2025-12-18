@@ -20,7 +20,7 @@ public class ProductQueryService {
         ProductIdVO id = new ProductIdVO(query.id());
         BusinessIdVO businessId = new BusinessIdVO(query.businessId());
 
-        return productQueryRepository.findProductsByBusinessIdAndCategory(id, businessId)
+        return productQueryRepository.findProductByProductIdAndBusinessId(id, businessId)
                 .stream()
                 .map(ProductQueryMapper::toDTO)
                 .toList(); // Modern Java 16+ replacement for collect(Collectors.toList())
