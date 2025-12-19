@@ -56,6 +56,8 @@ public record VariantEntity(
         );
     }
 
-    // Manual equals() and hashCode() removed for brevity as records
-    // provide these automatically using all fields.
+    public Set<FeatureAbstractClass> getFeatures() {
+        return features; // Access to the unmodifiable set
+    }
+
 }

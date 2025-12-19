@@ -1,12 +1,14 @@
 package com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant;
 
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureAbstractClass;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.HashSet;
 import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -88,5 +90,44 @@ class VariantEntityTest {
 
         assertNotEquals(entity1, entity3);
         assertNotEquals(entity1.hashCode(), entity3.hashCode());
+    }
+
+    @Test
+    void testGetFeatures() {
+        // Generate valid UUID strings to satisfy VO validation logic
+        String validFeatureUuid = java.util.UUID.randomUUID().toString();
+        String validVariantUuid = java.util.UUID.randomUUID().toString();
+
+        // Arrange
+        // FIX: Changed "FEATURE-1" to valid UUID
+        FeatureIdVO featureId = new FeatureIdVO(validFeatureUuid);
+        NameVO nameVO = new NameVO("Color");
+        DescriptionVO descriptionVO = new DescriptionVO("The color of the product");
+        LabelVO labelVO = new LabelVO("Color Label");
+        FeatureBasicEntity feature1 = new FeatureBasicEntity(featureId, nameVO, descriptionVO, labelVO);
+
+        Set<FeatureAbstractClass> features = new HashSet<>();
+        features.add(feature1);
+
+        // FIX: Changed "VARIANT-1" to valid UUID
+        VariantIdVO variantId = new VariantIdVO(validVariantUuid);
+        SkuVO sku = new SkuVO("SKU-123");
+
+        // ... rest of the test remains the same
+        PriceVO basePrice = new PriceVO(BigDecimal.valueOf(19.99));
+        PriceVO currentPrice = new PriceVO(BigDecimal.valueOf(19.99));
+        CareInstructionVO careInstructions = new CareInstructionVO("* Hand wash only");
+        WeightVO weight = new WeightVO(BigDecimal.valueOf(0.5), WeightUnitEnums.KILOGRAM);
+        VariantStatusEnums status = VariantStatusEnums.ACTIVE;
+
+        VariantEntity variant = new VariantEntity(variantId, sku, basePrice, currentPrice, features, careInstructions, weight, status);
+
+        // Act
+        Set<FeatureAbstractClass> retrievedFeatures = variant.getFeatures();
+
+        // Assert
+        assertNotNull(retrievedFeatures);
+        assertEquals(1, retrievedFeatures.size());
+        assertTrue(retrievedFeatures.contains(feature1));
     }
 }
