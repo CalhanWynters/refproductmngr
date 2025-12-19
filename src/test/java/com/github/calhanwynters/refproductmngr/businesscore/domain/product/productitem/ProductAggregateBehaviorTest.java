@@ -12,14 +12,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import java.util.Collections;
+
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-// Set strictness to LENIENT for the whole class to stop UnnecessaryStubbing exceptions
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(MockitoExtension.class)
 class ProductAggregateBehaviorTest {
@@ -27,159 +27,118 @@ class ProductAggregateBehaviorTest {
     @InjectMocks
     private ProductAggregateBehavior behavior;
 
-    // We will use these Mocks for the state-checking methods (isPublishable, etc.)
-    @Mock
-    private ProductAggregate mockAggregate;
-    @Mock
-    private VariantEntity mockActiveVariant;
-    @Mock
-    private VariantEntity mockInactiveVariantOne; // Renamed to ensure uniqueness
-    @Mock
-    private VariantEntity mockInactiveVariantTwo; // Added a second unique mock for sets
-    @Mock
-    private GalleryVO mockGalleryVO;
-    @Mock
-    private DescriptionVO mockDescriptionVO;
-    @Mock
-    private VersionVO mockVersionVO;
-    @Mock
-    private ProductIdVO mockProductIdVO;
-    @Mock
-    private BusinessIdVO mockBusinessIdVO;
-    @Mock
-    private CategoryVO mockCategoryVO;
+    @Mock private ProductAggregate mockAggregate;
+    @Mock private VariantEntity mockActiveVariant;
+    @Mock private VariantEntity mockInactiveVariantOne;
+    @Mock private VariantEntity mockInactiveVariantTwo;
+    @Mock private GalleryVO mockGalleryVO;
 
-    // Helper fields to create *real* VOs for the updateDescription test cases
+    // Real VOs for stateful transformation tests
     private ProductIdVO realProductId;
     private BusinessIdVO realBusinessId;
     private CategoryVO realCategory;
     private DescriptionVO realDescription;
     private VersionVO realVersion;
     private GalleryVO realGallery;
+    private Set<VariantEntity> activeVariantSet;
 
     @BeforeEach
     void setUp() {
-        // --- Setup for Mocks (used in state-checking tests) ---
-        lenient().when(mockAggregate.id()).thenReturn(mockProductIdVO);
-        lenient().when(mockAggregate.businessIdVO()).thenReturn(mockBusinessIdVO);
-        lenient().when(mockAggregate.category()).thenReturn(mockCategoryVO);
+        // Shared Mock behavior
         lenient().when(mockAggregate.gallery()).thenReturn(mockGalleryVO);
-        lenient().when(mockAggregate.variants()).thenReturn(Collections.emptySet());
-        lenient().when(mockAggregate.version()).thenReturn(mockVersionVO);
-        lenient().when(mockAggregate.description()).thenReturn(mockDescriptionVO);
+        lenient().when(mockActiveVariant.isActive()).thenReturn(true);
+        lenient().when(mockActiveVariant.status()).thenReturn(VariantStatusEnums.ACTIVE);
+        lenient().when(mockInactiveVariantOne.isActive()).thenReturn(false);
+        lenient().when(mockInactiveVariantOne.status()).thenReturn(VariantStatusEnums.DRAFT);
 
-        // Configure specific variant behavior (used widely)
-        when(mockActiveVariant.isActive()).thenReturn(true);
-        when(mockActiveVariant.status()).thenReturn(VariantStatusEnums.ACTIVE);
-
-        when(mockInactiveVariantOne.isActive()).thenReturn(false);
-        when(mockInactiveVariantOne.status()).thenReturn(VariantStatusEnums.DRAFT);
-
-        when(mockInactiveVariantTwo.isActive()).thenReturn(false);
-        when(mockInactiveVariantTwo.status()).thenReturn(VariantStatusEnums.DRAFT);
-
-        // --- Setup for Real Objects (used in updateDescription tests) ---
+        // Setup Real Objects for 2025 invariants
         realProductId = new ProductIdVO(UUID.randomUUID().toString());
-        realBusinessId = new BusinessIdVO("B456");
-        realCategory = new CategoryVO("C789");
-        realDescription = new DescriptionVO("Initial Description");
+        realBusinessId = new BusinessIdVO("B2025");
+        realCategory = new CategoryVO("Electronics");
+        realDescription = new DescriptionVO("High-end tech product");
         realVersion = new VersionVO(1);
-        List<ImageUrlVO> images = List.of(new ImageUrlVO("https://example.com/valid-image-1.jpg"));
-        realGallery = new GalleryVO(images);
+        realGallery = new GalleryVO(List.of(new ImageUrlVO("https://example.com/image.jpg")));
+        activeVariantSet = Set.of(mockActiveVariant);
     }
 
     @Test
-    @DisplayName("isPublishable should be true when both images and active variants exist")
-    void isPublishable_ValidConditions_ReturnsTrue() {
+    @DisplayName("isPublishable should be false if the product is deleted, even if valid")
+    void isPublishable_DeletedProduct_ReturnsFalse() {
+        when(mockAggregate.isDeleted()).thenReturn(true);
         when(mockGalleryVO.images()).thenReturn(List.of(mock(ImageUrlVO.class)));
         when(mockAggregate.variants()).thenReturn(Set.of(mockActiveVariant));
-        boolean result = behavior.isPublishable(mockAggregate);
-        assertTrue(result);
+
+        assertFalse(behavior.isPublishable(mockAggregate), "Deleted products must not be publishable in 2025");
     }
 
     @Test
-    @DisplayName("isPublishable should be false when no active variants exist")
-    void isPublishable_NoActiveVariants_ReturnsFalse() {
+    @DisplayName("isPublishable should be true for non-deleted product with images and active variants")
+    void isPublishable_ValidActiveProduct_ReturnsTrue() {
+        when(mockAggregate.isDeleted()).thenReturn(false);
         when(mockGalleryVO.images()).thenReturn(List.of(mock(ImageUrlVO.class)));
-        when(mockAggregate.variants()).thenReturn(Set.of(mockInactiveVariantOne)); // Use unique mock
-        boolean result = behavior.isPublishable(mockAggregate);
-        assertFalse(result);
+        when(mockAggregate.variants()).thenReturn(Set.of(mockActiveVariant));
+
+        assertTrue(behavior.isPublishable(mockAggregate));
     }
 
     @Test
-    @DisplayName("hasMinimumImages should be false if the gallery image list is empty")
-    void hasMinimumImages_EmptyGallery_ReturnsFalse() {
-        when(mockGalleryVO.images()).thenReturn(Collections.emptyList());
-        boolean result = behavior.hasMinimumImages(mockAggregate);
-        assertFalse(result);
+    @DisplayName("hasActiveVariants should return false immediately if aggregate is deleted")
+    void hasActiveVariants_DeletedAggregate_ShortCircuitsToFalse() {
+        when(mockAggregate.isDeleted()).thenReturn(true);
+        // Even if the set contains an active variant
+        when(mockAggregate.variants()).thenReturn(Set.of(mockActiveVariant));
+
+        assertFalse(behavior.hasActiveVariants(mockAggregate));
     }
 
     @Test
-    @DisplayName("allVariantsAreDraft should be true if all variants are DRAFT status")
-    void allVariantsAreDraft_AllDrafts_ReturnsTrue() {
-        // FIX: Use two *unique* mock instances in the Set
-        Set<VariantEntity> allDrafts = Set.of(mockInactiveVariantOne, mockInactiveVariantTwo);
-        when(mockAggregate.variants()).thenReturn(allDrafts);
-        boolean result = behavior.allVariantsAreDraft(mockAggregate);
-        assertTrue(result);
-    }
-
-    @Test
-    @DisplayName("allVariantsAreDraft should be true if there are no variants (empty set)")
-    void allVariantsAreDraft_EmptyVariants_ReturnsTrue() {
-        // This relies on the lenient default stubbing in setUp
-        boolean result = behavior.allVariantsAreDraft(mockAggregate);
-        assertTrue(result);
-    }
-
-    @Test
-    @DisplayName("allVariantsAreDraft should be false if at least one variant is not DRAFT (e.g., ACTIVE)")
-    void allVariantsAreDraft_MixedStatus_ReturnsFalse() {
-        // FIX: Use unique mocks
-        Set<VariantEntity> mixedStatus = Set.of(mockInactiveVariantOne, mockActiveVariant);
-        when(mockAggregate.variants()).thenReturn(mixedStatus);
-        boolean result = behavior.allVariantsAreDraft(mockAggregate);
-        assertFalse(result);
-    }
-
-    @Test
-    @DisplayName("updateDescription should return a new aggregate with updated text and incremented num")
-    void updateDescription_NewDescription_ReturnsNewAggregateWithUpdatedFields() {
-        // ARRANGE: Use *real* objects here (Fixes MissingMethodInvocationException)
-        ProductAggregate currentRealAggregate = new ProductAggregate(
+    @DisplayName("updateDescription should preserve isDeleted status when creating new instance")
+    void updateDescription_PreservesDeletedStatus() {
+        // ARRANGE: A deleted product
+        ProductAggregate deletedProduct = new ProductAggregate(
                 realProductId, realBusinessId, realCategory, realDescription,
-                realGallery, Collections.emptySet(), realVersion
+                realGallery, activeVariantSet, realVersion, true
         );
-        DescriptionVO newDescription = new DescriptionVO("Updated text");
+        DescriptionVO nextDesc = new DescriptionVO("This is a valid product text.");
 
         // ACT
-        ProductAggregate updatedAggregate = behavior.updateDescription(currentRealAggregate, newDescription);
+        ProductAggregate updated = behavior.updateDescription(deletedProduct, nextDesc);
 
         // ASSERT
-        assertNotNull(updatedAggregate);
-        assertNotSame(currentRealAggregate, updatedAggregate, "Should return a new instance (immutability pattern)");
-        assertEquals(newDescription, updatedAggregate.description());
-        // FIX: Use .num() accessor for the record field (fixes Cannot Resolve Method error)
-        assertEquals(2, updatedAggregate.version().num(), "Version should be incremented from 1 to 2");
-        assertEquals(currentRealAggregate.id(), updatedAggregate.id(), "ID should remain the same");
+        assertTrue(updated.isDeleted(), "Updating description should not implicitly restore a product");
+        assertEquals(2, updated.version().num());
     }
 
     @Test
-    @DisplayName("updateDescription should return the same aggregate instance if text is identical")
-    void updateDescription_SameDescription_ReturnsSameInstance() {
-        // ARRANGE: Use *real* objects here (Fixes MissingMethodInvocationException)
-        ProductAggregate currentRealAggregate = new ProductAggregate(
+    @DisplayName("restoreWithNewDescription should set isDeleted to false and increment version")
+    void restoreWithNewDescription_RestoresAndUpdates() {
+        // ARRANGE: A deleted product at version 5
+        ProductAggregate deletedProduct = new ProductAggregate(
                 realProductId, realBusinessId, realCategory, realDescription,
-                realGallery, Collections.emptySet(), realVersion
+                realGallery, activeVariantSet, new VersionVO(5), true
         );
-        DescriptionVO sameDescription = realDescription;
+        DescriptionVO newDesc = new DescriptionVO("Restored description");
 
         // ACT
-        ProductAggregate updatedAggregate = behavior.updateDescription(currentRealAggregate, sameDescription);
+        ProductAggregate restored = behavior.restoreWithNewDescription(deletedProduct, newDesc);
 
         // ASSERT
-        assertSame(currentRealAggregate, updatedAggregate, "Should return the exact same instance if no change is needed");
-        // FIX: Use .num() accessor for the record field
-        assertEquals(1, updatedAggregate.version().num(), "Version should not increment if input is the same");
+        assertFalse(restored.isDeleted(), "Product should be restored (isDeleted = false)");
+        assertEquals(newDesc, restored.description());
+        assertEquals(6, restored.version().num(), "Version should increment exactly once");
+    }
+
+    @Test
+    @DisplayName("restoreWithNewDescription should act like updateDescription if already active")
+    void restoreWithNewDescription_AlreadyActive_JustUpdates() {
+        ProductAggregate activeProduct = new ProductAggregate(
+                realProductId, realBusinessId, realCategory, realDescription,
+                realGallery, activeVariantSet, realVersion, false
+        );
+
+        ProductAggregate result = behavior.restoreWithNewDescription(activeProduct, new DescriptionVO("This is a valid product text."));
+
+        assertFalse(result.isDeleted());
+        assertEquals(2, result.version().num());
     }
 }

@@ -85,14 +85,27 @@ public class ProductRepositoryImplIntegrationTest {
         ImageUrlVO image = new ImageUrlVO("https://cdn.example.com/item.jpg");
         GalleryVO gallery = new GalleryVO(List.of(image));
 
+        // Create at least one variant to satisfy domain validation
+        VariantEntity defaultVariant = new VariantEntity(
+                VariantIdVO.generate(),
+                new SkuVO("SKU-DEFAULT"),
+                new PriceVO(BigDecimal.TEN),
+                new PriceVO(BigDecimal.TEN),
+                Collections.emptySet(),
+                new CareInstructionVO("* Please wash your hands."),
+                new WeightVO(BigDecimal.ONE, WeightUnitEnums.KILOGRAM),
+                VariantStatusEnums.ACTIVE
+        );
+
         return new ProductAggregate(
                 productId,
                 businessId,
                 new CategoryVO("Electronics"),
                 new DescriptionVO("Sample Description"),
                 gallery,
-                Collections.emptySet(),
-                new VersionVO(1)
+                Set.of(defaultVariant), // Pass the set containing the variant
+                new VersionVO(1),
+                false
         );
     }
 
@@ -170,7 +183,8 @@ public class ProductRepositoryImplIntegrationTest {
                 new DescriptionVO("Sample Description"),
                 gallery,
                 Set.of(variant),
-                new VersionVO(1)
+                new VersionVO(1),
+                false
         );
     }
 

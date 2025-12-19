@@ -3,14 +3,12 @@ package com.github.calhanwynters.refproductmngr.businesscore.domain.product.prod
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantStatusEnums;
-
 import java.util.Objects;
 import java.util.Set;
 
-/***
+/**
  * Aggregate Root representing a Product in the domain.
- * An immutable record that controls access to its internal components
- * and enforces business invariants.
+ * Enforces business invariants and manages state transitions through immutable updates.
  */
 public record ProductAggregate(
         ProductIdVO id,
@@ -19,57 +17,70 @@ public record ProductAggregate(
         DescriptionVO description,
         GalleryVO gallery,
         Set<VariantEntity> variants,
-        VersionVO version
+        VersionVO version,
+        boolean isDeleted
 ) {
+    // Compact Constructor for Validation and Invariant Enforcement
     public ProductAggregate {
-        Objects.requireNonNull(id, "id must not be null");
-        Objects.requireNonNull(businessIdVO, "businessId must not be null");
-        Objects.requireNonNull(category, "value must not be null");
-        Objects.requireNonNull(description, "text must not be null");
-        Objects.requireNonNull(gallery, "gallery must not be null");
-        Objects.requireNonNull(variants, "variants must not be null");
-        Objects.requireNonNull(version, "num must not be null");
-        // Ensure the internal collection is deeply immutable
+        Objects.requireNonNull(id, "Product ID cannot be null.");
+        Objects.requireNonNull(businessIdVO, "Business ID cannot be null.");
+        Objects.requireNonNull(category, "Category cannot be null.");
+        Objects.requireNonNull(description, "Description cannot be null.");
+        Objects.requireNonNull(gallery, "Gallery cannot be null.");
+        Objects.requireNonNull(version, "VersionVO cannot be null.");
+
+        // DDD Rule: An aggregate must maintain its internal consistency.
+        // A product typically requires at least one variant to be valid.
+        if (variants == null || variants.isEmpty()) {
+            throw new IllegalArgumentException("Product must have at least one variant.");
+        }
+
+        // Ensure the internal set is truly immutable and safe from external modification.
         variants = Set.copyOf(variants);
     }
 
-    // --- New Validation/State-Check Methods ---
+    // --- Business Rule Methods ---
 
-    /**
-     * Checks if the product is ready to be published (e.g., has at least one image and one active variant).
-     * @return true if the product meets minimum publication requirements.
-     */
     public boolean isPublishable() {
-        return hasMinimumImages() && hasActiveVariants();
+        return !isDeleted && hasMinimumImages() && hasActiveVariants();
     }
 
-    /**
-     * Helper method to check if the gallery has at least one image.
-     * @return true if there is at least one image URL.
-     */
     public boolean hasMinimumImages() {
-        // We assume GalleryVO.images() returns the internal list/set
         return !this.gallery.images().isEmpty();
     }
 
-    /**
-     * Helper method to check if the product has at least one variant currently active.
-     * @return true if any variant has a status of ACTIVE.
-     */
     public boolean hasActiveVariants() {
-        return this.variants.stream()
-                .anyMatch(VariantEntity::isActive);
+        if (this.isDeleted) return false; // Deleted products cannot have active variants
+        return this.variants.stream().anyMatch(VariantEntity::isActive);
+    }
+
+    public boolean allVariantsAreDraft() {
+        return this.variants.stream().allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
+    }
+
+    // --- State Transition Methods (Optimistic Locking) ---
+
+    /**
+     * Marks the product as deleted. Increments version for optimistic locking.
+     */
+    public ProductAggregate softDelete() {
+        if (this.isDeleted) return this; // Idempotent check
+        return new ProductAggregate(id, businessIdVO, category, description, gallery, variants, version.nextVersion(), true);
     }
 
     /**
-     * Checks if all variants within this product aggregate are currently in a DRAFT status.
-     * @return true if all variants are DRAFT status.
+     * Restores a deleted product. Increments version for optimistic locking.
      */
-    public boolean allVariantsAreDraft() {
-        if (this.variants.isEmpty()) {
-            return true; // Conventionally true if no variants exist yet
-        }
-        return this.variants.stream()
-                .allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
+    public ProductAggregate restore() {
+        if (!this.isDeleted) return this; // Idempotent check
+        return new ProductAggregate(id, businessIdVO, category, description, gallery, variants, version.nextVersion(), false);
+    }
+
+    /**
+     * Explicit update method to demonstrate DDD expressive behavior.
+     * Always increments the version to signal a state change to the persistence layer.
+     */
+    public ProductAggregate updateContent(DescriptionVO newDescription, GalleryVO newGallery) {
+        return new ProductAggregate(id, businessIdVO, category, newDescription, newGallery, variants, version.nextVersion(), isDeleted);
     }
 }

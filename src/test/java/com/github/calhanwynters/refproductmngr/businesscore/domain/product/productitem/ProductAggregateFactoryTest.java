@@ -5,6 +5,7 @@ import com.github.calhanwynters.refproductmngr.businesscore.domain.product.varia
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -14,46 +15,36 @@ import static org.mockito.Mockito.mock;
 
 class ProductAggregateFactoryTest {
 
-    // Helper fields to ensure valid inputs for VOs
     private BusinessIdVO validBusinessId;
     private CategoryVO validCategory;
     private DescriptionVO validDescription;
     private GalleryVO validGallery;
-    private VersionVO validVersion;
-    private Set<VariantEntity> emptyVariants;
     private Set<VariantEntity> initialVariantsSet;
 
     @BeforeEach
     void setUp() {
-        // Initialize valid, real VOs
         validBusinessId = new BusinessIdVO("B456");
         validCategory = new CategoryVO("C789");
         validDescription = new DescriptionVO("Initial Description");
 
-        // GalleryVO requires at least one image URL now
+        // GalleryVO requires at least one image URL per 2025 constraints
         List<ImageUrlVO> images = List.of(new ImageUrlVO("https://example.com/img1.jpg"));
         validGallery = new GalleryVO(images);
 
-        validVersion = new VersionVO(1);
-        emptyVariants = Collections.emptySet();
-
-        // Prepare a set with initial variants (using a mock for simplicity of variant entity)
+        // Prepare a set with initial variants (using a mock for simplicity)
         VariantEntity mockVariant = mock(VariantEntity.class);
         initialVariantsSet = Set.of(mockVariant);
     }
 
-    // --- Test create(businessIdVO, value, text, gallery, num, initialVariants) ---
-
     @Test
-    @DisplayName("Create with initial variants should return a valid ProductAggregate with all fields set")
-    void createWithVariants_ValidInputs_CreatesAggregate() {
+    @DisplayName("Create should return a valid ProductAggregate with all fields set and version 0")
+    void create_ValidInputs_CreatesAggregate() {
         // Act
         ProductAggregate aggregate = ProductAggregateFactory.create(
                 validBusinessId,
                 validCategory,
                 validDescription,
                 validGallery,
-                validVersion,
                 initialVariantsSet
         );
 
@@ -64,58 +55,68 @@ class ProductAggregateFactoryTest {
         assertEquals(validCategory, aggregate.category());
         assertEquals(validDescription, aggregate.description());
         assertEquals(validGallery, aggregate.gallery());
-        assertEquals(validVersion, aggregate.version());
-        assertFalse(aggregate.variants().isEmpty(), "Aggregate should contain initial variants");
+        assertEquals(0, aggregate.version().num(), "New products must start at version 0");
+        assertFalse(aggregate.isDeleted(), "New products should not be marked as deleted");
         assertEquals(1, aggregate.variants().size());
     }
 
     @Test
-    @DisplayName("Generated ProductIdVOs should be unique across multiple factory calls")
-    void createWithVariants_MultipleCalls_UniqueIds() {
-        // Act
-        ProductAggregate aggregate1 = ProductAggregateFactory.create(
-                validBusinessId, validCategory, validDescription, validGallery, validVersion, emptyVariants
+    @DisplayName("Create must throw IllegalArgumentException if initial variants are empty (2025 Invariant)")
+    void create_EmptyVariants_ThrowsException() {
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                ProductAggregateFactory.create(
+                        validBusinessId,
+                        validCategory,
+                        validDescription,
+                        validGallery,
+                        Collections.emptySet()
+                )
         );
-        ProductAggregate aggregate2 = ProductAggregateFactory.create(
-                validBusinessId, validCategory, validDescription, validGallery, validVersion, emptyVariants
-        );
-
-        // Assert
-        assertNotEquals(aggregate1.id(), aggregate2.id(), "Factory must generate unique UUID-based IDs");
+        assertTrue(exception.getMessage().contains("must have at least one initial variant"));
     }
 
-
-    // --- Test create(businessIdVO, value, text, gallery, num) (Overload without variants) ---
-
     @Test
-    @DisplayName("Create without explicit variants should default to an empty variants set")
-    void createWithoutVariants_ValidInputs_CreatesAggregateWithEmptyVariants() {
+    @DisplayName("Reconstruct should restore all fields exactly as provided from persistence")
+    void reconstruct_ValidInputs_RestoresAggregate() {
+        // Arrange
+        ProductIdVO existingId = ProductIdVO.generate();
+        VersionVO existingVersion = new VersionVO(5);
+        boolean isDeleted = true;
+
         // Act
-        ProductAggregate aggregate = ProductAggregateFactory.create(
+        ProductAggregate aggregate = ProductAggregateFactory.reconstruct(
+                existingId,
                 validBusinessId,
                 validCategory,
                 validDescription,
                 validGallery,
-                validVersion
+                initialVariantsSet,
+                existingVersion,
+                isDeleted
         );
 
         // Assert
-        assertNotNull(aggregate);
-        assertTrue(aggregate.variants().isEmpty(), "Aggregate variants set should be empty by default");
+        assertEquals(existingId, aggregate.id());
+        assertEquals(existingVersion, aggregate.version());
+        assertTrue(aggregate.isDeleted());
+        assertEquals(initialVariantsSet, aggregate.variants());
     }
 
-    // --- Test input validation (relies on underlying VO/Aggregate constraints) ---
+    @Test
+    @DisplayName("Generated ProductIdVOs should be unique across multiple factory calls")
+    void create_MultipleCalls_UniqueIds() {
+        ProductAggregate aggregate1 = ProductAggregateFactory.create(validBusinessId, validCategory, validDescription, validGallery, initialVariantsSet);
+        ProductAggregate aggregate2 = ProductAggregateFactory.create(validBusinessId, validCategory, validDescription, validGallery, initialVariantsSet);
+
+        assertNotEquals(aggregate1.id(), aggregate2.id(), "Factory must generate unique UUID-based IDs");
+    }
 
     @Test
-    @DisplayName("Factory should propagate exceptions if a mandatory input is null (e.g., BusinessIdVO)")
+    @DisplayName("Factory should propagate NullPointerException if mandatory BusinessIdVO is null")
     void create_NullBusinessId_ThrowsNPE() {
-        assertThrows(NullPointerException.class, () -> ProductAggregateFactory.create(
-                null, // Null input
-                validCategory,
-                validDescription,
-                validGallery,
-                validVersion,
-                emptyVariants
-        ));
+        assertThrows(NullPointerException.class, () ->
+                ProductAggregateFactory.create(null, validCategory, validDescription, validGallery, initialVariantsSet)
+        );
     }
 }

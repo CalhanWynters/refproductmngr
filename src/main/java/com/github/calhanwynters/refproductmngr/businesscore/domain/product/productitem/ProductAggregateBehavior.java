@@ -3,67 +3,63 @@ package com.github.calhanwynters.refproductmngr.businesscore.domain.product.prod
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantStatusEnums;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
+import java.util.Objects;
 
 /**
- * A Domain Service class responsible for coordinating business logic
- * and enforcing invariants related to the ProductAggregate state.
+ * A Domain Service responsible for coordinating complex product logic.
+ * Updated for 2025 to respect aggregate immutability and versioning invariants.
  */
-public class ProductAggregateBehavior { // Renamed class
-
-    // Helper methods that use the aggregate's getters to determine state
+public class ProductAggregateBehavior {
 
     /**
-     * Checks if the product is ready to be published (e.g., has at least one image and one active variant).
-     * @param product The aggregate instance to check.
-     * @return true if the product meets minimum publication requirements.
+     * Determines if a product can be published.
+     * Respects the soft-delete status added in the 2025 aggregate update.
      */
     public boolean isPublishable(ProductAggregate product) {
-        return hasMinimumImages(product) && hasActiveVariants(product);
+        Objects.requireNonNull(product, "Product aggregate cannot be null");
+        return !product.isDeleted() && hasMinimumImages(product) && hasActiveVariants(product);
     }
 
     /**
-     * Helper method to check if the gallery has at least one image.
-     * @param product The aggregate instance to check.
-     * @return true if there is at least one image URL.
+     * Checks for at least one image in the gallery.
      */
     public boolean hasMinimumImages(ProductAggregate product) {
         return !product.gallery().images().isEmpty();
     }
 
     /**
-     * Helper method to check if the product has at least one variant currently active.
-     * @param product The aggregate instance to check.
-     * @return true if any variant has a status of ACTIVE.
+     * Checks if any variant is currently active.
+     * Note: In a deleted state, this logic usually returns false at the coordination level.
      */
     public boolean hasActiveVariants(ProductAggregate product) {
+        if (product.isDeleted()) return false;
         return product.variants().stream().anyMatch(VariantEntity::isActive);
     }
 
     /**
-     * Checks if all variants within this product aggregate are currently in a DRAFT status.
-     * @param product The aggregate instance to check.
-     * @return true if all variants are DRAFT status.
+     * Validates if the product lifecycle is still in the 'Draft' phase across all variants.
      */
     public boolean allVariantsAreDraft(ProductAggregate product) {
-        if (product.variants().isEmpty()) {
-            return true;
-        }
-        return product.variants().stream().allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
+        // Since the 2025 aggregate constructor ensures variants are never empty,
+        // we can proceed directly to the stream check.
+        return product.variants().stream()
+                .allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
     }
 
-    // State-changing methods handled by the behavior class:
-
     /**
-     * Example of a state-changing operation handled by the behavior class.
-     * @param currentProduct The product to update.
-     * @param newDescription The new text to apply.
-     * @return A new instance of ProductAggregate with the updated text.
+     * Coordinates the description update.
+     * Enforces version incrementing and idempotency.
      */
     public ProductAggregate updateDescription(ProductAggregate currentProduct, DescriptionVO newDescription) {
+        Objects.requireNonNull(currentProduct, "Current product cannot be null");
+        Objects.requireNonNull(newDescription, "New description cannot be null");
+
+        // Idempotency: Return existing instance if no state change is detected
         if (currentProduct.description().equals(newDescription)) {
             return currentProduct;
         }
 
+        // Return a new instance using the aggregate's constructor with an incremented version
         return new ProductAggregate(
                 currentProduct.id(),
                 currentProduct.businessIdVO(),
@@ -71,7 +67,29 @@ public class ProductAggregateBehavior { // Renamed class
                 newDescription,
                 currentProduct.gallery(),
                 currentProduct.variants(),
-                currentProduct.version().nextVersion()
+                currentProduct.version().nextVersion(), // 2025 Versioning
+                currentProduct.isDeleted()              // Maintain delete status
+        );
+    }
+
+    /**
+     * Specialized coordination to ensure a product is restored and updated simultaneously.
+     */
+    public ProductAggregate restoreWithNewDescription(ProductAggregate product, DescriptionVO description) {
+        if (!product.isDeleted()) {
+            return updateDescription(product, description);
+        }
+
+        // Manual construction to increment version once for multiple changes
+        return new ProductAggregate(
+                product.id(),
+                product.businessIdVO(),
+                product.category(),
+                description,
+                product.gallery(),
+                product.variants(),
+                product.version().nextVersion(),
+                false // Restored
         );
     }
 }

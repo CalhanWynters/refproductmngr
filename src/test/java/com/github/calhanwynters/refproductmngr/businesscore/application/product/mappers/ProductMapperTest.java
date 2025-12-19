@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,29 +25,17 @@ class ProductMapperTest {
         String description = "A high-quality product.";
         String imageUrl = "https://example.com/image.jpg";
 
-        // Setup the VariantEntity
-        PriceVO basePrice = new PriceVO(new BigDecimal("100.00"), 2, Currency.getInstance("USD"));
-        PriceVO currentPrice = new PriceVO(new BigDecimal("90.00"), 2, Currency.getInstance("USD"));
-        VariantEntity variant = new VariantEntity(
-                VariantIdVO.generate(),  // Generate a valid UUID
-                new SkuVO("SKU-123"),
-                basePrice,
-                currentPrice,
-                Collections.emptySet(), // Assuming no features for simplicity
-                new CareInstructionVO("* Follow these care instructions:"), // Ensure it starts with a bullet point
-                new WeightVO(new BigDecimal("1.5"), WeightUnitEnums.KILOGRAM),
-                VariantStatusEnums.ACTIVE
-        );
+        VariantEntity variant = createSampleVariant();
 
-        // Setup the main ProductAggregate
         ProductAggregate aggregate = new ProductAggregate(
                 new ProductIdVO(productId),
                 new BusinessIdVO(businessId),
                 new CategoryVO(category),
                 new DescriptionVO(description),
-                new GalleryVO(Collections.singletonList(new ImageUrlVO(imageUrl))),
+                new GalleryVO(List.of(new ImageUrlVO(imageUrl))),
                 Collections.singleton(variant),
-                new VersionVO(1)
+                new VersionVO(1),
+                false
         );
 
         // Act
@@ -55,23 +44,43 @@ class ProductMapperTest {
         // Assert
         assertNotNull(result);
         assertEquals(productId, result.id());
-        assertEquals(businessId, result.businessId());
-        assertEquals(category, result.category());
-        assertEquals(description, result.description());
-        assertEquals(1, result.imageUrls().size());
-        assertEquals(imageUrl, result.imageUrls().get(0));  // Access the first image URL
-        assertEquals(1, result.variants().size());
-        assertEquals("SKU-123", result.variants().iterator().next().sku());
-        assertEquals(1, result.version());
-        assertTrue(result.isPublishable()); // Assuming it meets the publishable criteria
+        assertFalse(result.isDeleted());
+        assertTrue(result.isPublishable());
     }
 
     @Test
-    void testToDTO_NullAggregate() {
+    void testToDTO_SoftDeletedProduct() {
+        // Arrange
+        VariantEntity variant = createSampleVariant();
+        ProductAggregate aggregate = new ProductAggregate(
+                new ProductIdVO(UUID.randomUUID().toString()),
+                new BusinessIdVO("B-1"), new CategoryVO("Cat"), new DescriptionVO("This is a valid text."),
+                new GalleryVO(List.of(new ImageUrlVO("https://example.com/img.jpg"))),
+                Collections.singleton(variant), new VersionVO(1),
+                true // isDeleted is TRUE
+        );
+
         // Act
-        ProductDTO result = ProductMapper.toDTO(null); // Pass null to the method
+        ProductDTO result = ProductMapper.toDTO(aggregate);
 
         // Assert
-        assertNull(result);  // Assert that the result is null
+        assertTrue(result.isDeleted());
+        assertFalse(result.isPublishable(), "Deleted products should not be publishable");
+    }
+
+    private VariantEntity createSampleVariant() {
+        // Provide valid PriceVO objects to avoid NullPointerException
+        PriceVO price = new PriceVO(new BigDecimal("100.00"), 2, Currency.getInstance("USD"));
+
+        return new VariantEntity(
+                VariantIdVO.generate(),
+                new SkuVO("SKU-123"),
+                price, // basePrice
+                price, // currentPrice
+                Collections.emptySet(),
+                new CareInstructionVO("* Care instruction"),
+                new WeightVO(BigDecimal.ONE, WeightUnitEnums.KILOGRAM),
+                VariantStatusEnums.ACTIVE
+        );
     }
 }

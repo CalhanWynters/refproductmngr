@@ -169,6 +169,7 @@ public class DomainPrintTest {
         CategoryVO category = new CategoryVO("C789");
         DescriptionVO description = new DescriptionVO("Premium Cotton T-Shirt with custom options");
         VersionVO version = new VersionVO(1);
+        boolean isDeleted = false; // New boolean flag
 
         // Create gallery with images
         List<ImageUrlVO> images = List.of(
@@ -203,8 +204,9 @@ public class DomainPrintTest {
 
         Set<VariantEntity> variants = Set.of(variant1, variant2);
 
+        // Updated constructor call with isDeleted parameter
         ProductAggregate aggregate = new ProductAggregate(
-                productId, businessId, category, description, gallery, variants, version
+                productId, businessId, category, description, gallery, variants, version, isDeleted
         );
 
         // Act & Print
@@ -214,11 +216,15 @@ public class DomainPrintTest {
         System.out.println("Category: " + aggregate.category());
         System.out.println("Description: " + aggregate.description());
         System.out.println("Version: " + aggregate.version());
+        System.out.println("Is Deleted: " + aggregate.isDeleted()); // Added to print
         System.out.println("\n--- Gallery (" + aggregate.gallery().images().size() + " images) ---");
         aggregate.gallery().images().forEach(img -> System.out.println("  - " + img));
         System.out.println("\n--- Variants (" + aggregate.variants().size() + ") ---");
-        aggregate.variants().forEach(variant -> System.out.println("  - SKU: " + variant.sku() + " | Status: " + variant.status() + " | Price: " + variant.currentPrice()));
+        aggregate.variants().forEach(variant ->
+                System.out.println("  - SKU: " + variant.sku() + " | Status: " + variant.status() + " | Price: " + variant.currentPrice())
+        );
         System.out.println("\n--- Business Rules ---");
+        System.out.println("Is Soft Deleted: " + aggregate.isDeleted());
         System.out.println("Has Minimum Images: " + aggregate.hasMinimumImages());
         System.out.println("Has Active Variants: " + aggregate.hasActiveVariants());
         System.out.println("Is Publishable: " + aggregate.isPublishable());
@@ -226,8 +232,9 @@ public class DomainPrintTest {
         System.out.println("\nAggregate: " + aggregate);
         System.out.println("========================================\n");
 
-        // Assert - just verify it was created successfully
+        // Assert
         assertNotNull(aggregate);
+        assertFalse(aggregate.isDeleted()); // Verify default state
         assertTrue(aggregate.isPublishable());
         assertEquals(2, aggregate.variants().size());
         assertEquals(3, aggregate.gallery().images().size());

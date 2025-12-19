@@ -3,9 +3,7 @@ package com.github.calhanwynters.refproductmngr.businesscore.application.product
 import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ProductDTO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ImageUrlVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregate;
-
 import java.util.stream.Collectors;
-
 
 public final class ProductMapper {
 
@@ -22,14 +20,12 @@ public final class ProductMapper {
                 aggregate.businessIdVO().value(),
                 aggregate.category().value(),
                 aggregate.description().text(),
-                // Extracting String URLs from List<ImageUrlVO>
-                aggregate.gallery().images().stream()
-                        .map(ImageUrlVO::url)
-                        .toList(),
-                aggregate.variants().stream()
-                        .map(VariantMapper::toDTO)
-                        .collect(Collectors.toSet()),
+                // Maps List<ImageUrlVO> to List<String>
+                aggregate.gallery().images().stream().map(ImageUrlVO::url).toList(),
+                // Maps Set<VariantEntity> to Set<VariantDTO>
+                aggregate.variants().stream().map(VariantMapper::toDTO).collect(Collectors.toSet()),
                 aggregate.version().num(),
+                aggregate.isDeleted(), // Map the isDeleted field from Aggregate
                 aggregate.isPublishable()
         );
     }

@@ -2,6 +2,7 @@ package com.github.calhanwynters.refproductmngr.businessinfra.infrastructure.per
 
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,9 +14,11 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
-import java.util.Collections;
+import java.math.BigDecimal;
+import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,9 +39,7 @@ public class ProductRepositoryImplTest {
     @BeforeEach
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        // satisfy UUID regex
         productId = ProductIdVO.generate();
-        // satisfy [A-Z0-9-]+ regex
         businessId = new BusinessIdVO("BIZ-456");
     }
 
@@ -50,7 +51,6 @@ public class ProductRepositoryImplTest {
     @Test
     @DisplayName("Should return a product when it exists in the database")
     void testFindProductByProductIdAndBusinessId_Success() {
-        // Arrange
         ProductAggregate product = createValidProductAggregate();
 
         when(mongoTemplate.query(ProductAggregate.class)
@@ -58,38 +58,31 @@ public class ProductRepositoryImplTest {
                 .oneValue())
                 .thenReturn(product);
 
-        // Act
         Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
 
-        // Assert
-        assertTrue(result.isPresent(), "Expected product to be found");
+        assertTrue(result.isPresent());
         assertEquals(product, result.get());
     }
 
     @Test
     @DisplayName("Should return empty Optional when no product matches the criteria")
     void testFindProductByProductIdAndBusinessId_NotFound() {
-        // Arrange
         when(mongoTemplate.query(ProductAggregate.class)
                 .matching(any(Query.class))
                 .oneValue())
                 .thenReturn(null);
 
-        // Act
         Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
 
-        // Assert
-        assertFalse(result.isPresent(), "Result should be empty when no record is found");
+        assertFalse(result.isPresent());
     }
 
     @Test
     @DisplayName("Should wrap database errors in ProductRepositoryException")
     void testFindProductByProductIdAndBusinessId_Exception() {
-        // Arrange
         when(mongoTemplate.query(ProductAggregate.class))
                 .thenThrow(new RuntimeException("Database connection failure"));
 
-        // Act & Assert
         ProductRepositoryException exception = assertThrows(ProductRepositoryException.class, () ->
                 productRepository.findProductByProductIdAndBusinessId(productId, businessId)
         );
@@ -98,15 +91,25 @@ public class ProductRepositoryImplTest {
     }
 
     /**
-     * Helper to build a valid Aggregate satisfying all Domain invariants:
-     * - Valid UUID ProductId
-     * - Uppercase BusinessId
-     * - HTTPS ImageUrl
-     * - Gallery with >= 1 image
+     * Updated helper to satisfy Domain invariants:
+     * - Must have at least one variant.
+     * - Includes isDeleted boolean.
      */
     private ProductAggregate createValidProductAggregate() {
         ImageUrlVO image = new ImageUrlVO("https://cdn.example.com/item.jpg");
         GalleryVO gallery = new GalleryVO(List.of(image));
+
+        // Create a valid variant to satisfy the ProductAggregate constructor requirement
+        VariantEntity variant = new VariantEntity(
+                VariantIdVO.generate(),
+                new SkuVO("SKU-VALID-123"),
+                new PriceVO(new BigDecimal("50.00"), 2, Currency.getInstance("USD")),
+                new PriceVO(new BigDecimal("45.00"), 2, Currency.getInstance("USD")),
+                Set.of(),
+                new CareInstructionVO("* Machine wash cold"),
+                new WeightVO(new BigDecimal("0.5"), WeightUnitEnums.KILOGRAM),
+                VariantStatusEnums.ACTIVE
+        );
 
         return new ProductAggregate(
                 productId,
@@ -114,8 +117,9 @@ public class ProductRepositoryImplTest {
                 new CategoryVO("Electronics"),
                 new DescriptionVO("Sample Description"),
                 gallery,
-                Collections.emptySet(),
-                new VersionVO(1)
+                Set.of(variant), // Non-empty set required
+                new VersionVO(1),
+                false // isDeleted flag
         );
     }
 }

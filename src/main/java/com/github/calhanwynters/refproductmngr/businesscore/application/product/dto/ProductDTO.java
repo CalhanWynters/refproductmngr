@@ -14,5 +14,6 @@ public record ProductDTO(
         List<String> imageUrls,     // List preserves gallery order (Primary image is first)
         Set<VariantDTO> variants,
         int version,
+        boolean isDeleted,
         boolean isPublishable
 ) {}
