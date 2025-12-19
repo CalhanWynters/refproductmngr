@@ -7,7 +7,8 @@
                 "business-core::bc-domain-product-common",
                 "business-core::bc-domain-product-feature",
                 "business-core::bc-domain-product-productitem",
-                "business-core::bc-domain-product-variant"
+                "business-core::bc-domain-product-variant",
+                "business-core::bc-domain-product-exceptions"
         }
 )
 package com.github.calhanwynters.refproductmngr.businessinfra;

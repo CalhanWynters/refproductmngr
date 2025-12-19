@@ -1,4 +1,4 @@
-package com.github.calhanwynters.refproductmngr.businesscore.domain.product;
+package com.github.calhanwynters.refproductmngr.businesscore.domain.product.exceptions;
 
 /**
  * A custom runtime exception to indicate that a variant with a specific ID

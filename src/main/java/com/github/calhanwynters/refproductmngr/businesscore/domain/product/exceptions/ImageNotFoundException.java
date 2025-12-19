@@ -1,4 +1,4 @@
-package com.github.calhanwynters.refproductmngr.businesscore.domain.product;
+package com.github.calhanwynters.refproductmngr.businesscore.domain.product.exceptions;
 
 /**
  * Exception thrown when an image URL cannot be found in the product gallery.
