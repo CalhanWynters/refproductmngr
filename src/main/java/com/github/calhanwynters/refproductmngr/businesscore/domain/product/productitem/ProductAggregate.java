@@ -2,14 +2,12 @@ package com.github.calhanwynters.refproductmngr.businesscore.domain.product.prod
 
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantIdVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantStatusEnums;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Aggregate Root representing a Product in the domain.
- * Enforces business invariants and manages state transitions through immutable updates.
- */
 public record ProductAggregate(
         ProductIdVO id,
         BusinessIdVO businessIdVO,
@@ -20,7 +18,6 @@ public record ProductAggregate(
         VersionVO version,
         boolean isDeleted
 ) {
-    // Compact Constructor for Validation and Invariant Enforcement
     public ProductAggregate {
         Objects.requireNonNull(id, "Product ID cannot be null.");
         Objects.requireNonNull(businessIdVO, "Business ID cannot be null.");
@@ -29,58 +26,84 @@ public record ProductAggregate(
         Objects.requireNonNull(gallery, "Gallery cannot be null.");
         Objects.requireNonNull(version, "VersionVO cannot be null.");
 
-        // DDD Rule: An aggregate must maintain its internal consistency.
-        // A product typically requires at least one variant to be valid.
         if (variants == null || variants.isEmpty()) {
             throw new IllegalArgumentException("Product must have at least one variant.");
         }
-
-        // Ensure the internal set is truly immutable and safe from external modification.
+        // Set.copyOf ensures the internal set is truly immutable
         variants = Set.copyOf(variants);
     }
 
-    // --- Business Rule Methods ---
+    // --- Domain Behaviors (Commands) ---
 
-    public boolean isPublishable() {
-        return !isDeleted && hasMinimumImages() && hasActiveVariants();
+    public ProductAggregate updateVariantStatus(VariantIdVO variantId, VariantStatusEnums newStatus) {
+        // Invariant: Verify membership within this aggregate boundary
+        if (this.variants().stream().noneMatch(v -> v.id().equals(variantId))) {
+            throw new IllegalArgumentException("Variant does not belong to this product");
+        }
+
+        // Invariant: Cross-entity rule (Cannot activate without images)
+        if (newStatus == VariantStatusEnums.ACTIVE && this.gallery.images().isEmpty()) {
+            throw new IllegalStateException("Cannot activate a variant for a product with no images");
+        }
+
+        Set<VariantEntity> updatedVariants = this.variants().stream()
+                .map(v -> v.id().equals(variantId) ? v.withStatus(newStatus) : v)
+                .collect(Collectors.toSet());
+
+        return new ProductAggregate(id, businessIdVO, category, description, gallery, updatedVariants, version, isDeleted);
     }
 
+    public ProductAggregate softDelete() {
+        if (this.isDeleted) return this;
+        return new ProductAggregate(id, businessIdVO, category, description, gallery, variants, version, true);
+    }
+
+    public ProductAggregate addVariant(VariantEntity newVariant) {
+        Objects.requireNonNull(newVariant, "New variant cannot be null.");
+
+        // Invariant: Ensure SKU uniqueness within this aggregate boundary
+        if (this.variants.stream().anyMatch(v -> v.sku().equals(newVariant.sku()))) {
+            throw new IllegalArgumentException("SKU " + newVariant.sku().sku() + " already exists in this product.");
+        }
+
+        Set<VariantEntity> updatedVariants = new java.util.HashSet<>(this.variants);
+        updatedVariants.add(newVariant);
+
+        return new ProductAggregate(id, businessIdVO, category, description, gallery, updatedVariants, version, isDeleted);
+    }
+
+    public ProductAggregate updateBasicInfo(DescriptionVO newDescription, CategoryVO newCategory) {
+        // Fail-fast checks in the aggregate root
+        Objects.requireNonNull(newDescription, "New description is required.");
+        Objects.requireNonNull(newCategory, "New category is required.");
+
+        return new ProductAggregate(
+                id,
+                businessIdVO,
+                newCategory,
+                newDescription,
+                gallery,
+                variants,
+                version,
+                isDeleted
+        );
+    }
+
+    // --- Query Methods (Read-side optimizations) ---
+
     public boolean hasMinimumImages() {
+        // Current rule: at least 1 image.
+        // Future rule: return this.gallery.images().size() >= 3;
         return !this.gallery.images().isEmpty();
     }
 
+    public boolean isPublishable() {
+        // Reads like a business document
+        return !isDeleted && hasMinimumImages() && hasActiveVariants();
+    }
+
     public boolean hasActiveVariants() {
-        if (this.isDeleted) return false; // Deleted products cannot have active variants
+        if (this.isDeleted) return false;
         return this.variants.stream().anyMatch(VariantEntity::isActive);
-    }
-
-    public boolean allVariantsAreDraft() {
-        return this.variants.stream().allMatch(v -> v.status() == VariantStatusEnums.DRAFT);
-    }
-
-    // --- State Transition Methods (Optimistic Locking) ---
-
-    /**
-     * Marks the product as deleted. Increments version for optimistic locking.
-     */
-    public ProductAggregate softDelete() {
-        if (this.isDeleted) return this; // Idempotent check
-        return new ProductAggregate(id, businessIdVO, category, description, gallery, variants, version.nextVersion(), true);
-    }
-
-    /**
-     * Restores a deleted product. Increments version for optimistic locking.
-     */
-    public ProductAggregate restore() {
-        if (!this.isDeleted) return this; // Idempotent check
-        return new ProductAggregate(id, businessIdVO, category, description, gallery, variants, version.nextVersion(), false);
-    }
-
-    /**
-     * Explicit update method to demonstrate DDD expressive behavior.
-     * Always increments the version to signal a state change to the persistence layer.
-     */
-    public ProductAggregate updateContent(DescriptionVO newDescription, GalleryVO newGallery) {
-        return new ProductAggregate(id, businessIdVO, category, newDescription, newGallery, variants, version.nextVersion(), isDeleted);
     }
 }

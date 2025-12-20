@@ -60,4 +60,9 @@ public record VariantEntity(
         return features; // Access to the unmodifiable set
     }
 
+    public VariantEntity withStatus(VariantStatusEnums newStatus) {
+        return new VariantEntity(id, sku, basePrice, currentPrice, features, careInstructions, weight, newStatus);
+    }
+
+
 }

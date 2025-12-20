@@ -6,10 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Currency;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -130,4 +128,40 @@ class VariantEntityTest {
         assertEquals(1, retrievedFeatures.size());
         assertTrue(retrievedFeatures.contains(feature1));
     }
+
+    @Test
+    @DisplayName("withStatus should return a new instance with the updated status and preserved attributes")
+    void withStatus_ReturnsNewInstanceWithUpdatedStatus() {
+        // Arrange - Using the Value Objects initialized in setUp()
+        VariantEntity original = new VariantEntity(
+                mockId,
+                mockSku,
+                mockBasePrice,
+                mockCurrentPrice,
+                mockFeatures,
+                mockCareInstructions,
+                mockWeight,
+                VariantStatusEnums.DRAFT
+        );
+
+        // Act
+        VariantEntity updated = original.withStatus(VariantStatusEnums.ACTIVE);
+
+        // Assert: Verify state change
+        assertEquals(VariantStatusEnums.ACTIVE, updated.status(), "Status should be updated to ACTIVE");
+
+        // Assert: Verify identity and attribute preservation (Identity and VOs must match)
+        assertEquals(original.id(), updated.id(), "ID must remain the same");
+        assertEquals(original.sku(), updated.sku(), "SKU must remain the same");
+        assertEquals(original.basePrice(), updated.basePrice(), "Base price must remain the same");
+        assertEquals(original.currentPrice(), updated.currentPrice(), "Current price must remain the same");
+        assertEquals(original.features(), updated.features(), "Features must remain the same");
+        assertEquals(original.careInstructions(), updated.careInstructions(), "Care instructions must remain the same");
+        assertEquals(original.weight(), updated.weight(), "Weight must remain the same");
+
+        // Assert: Verify Immutability (Pure DDD requirement)
+        assertNotSame(original, updated, "Should return a new instance, not modify the original");
+        assertEquals(VariantStatusEnums.DRAFT, original.status(), "Original instance status must remain DRAFT");
+    }
+
 }

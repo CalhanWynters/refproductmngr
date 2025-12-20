@@ -1,5 +1,5 @@
 @org.springframework.modulith.ApplicationModule(
-        id = "business-infra",
+        id = "business-infra-persistence",
         allowedDependencies = {
                 "business-core",               // Dependency on the main module
                 "business-core::bc-api",

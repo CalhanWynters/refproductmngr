@@ -228,7 +228,6 @@ public class DomainPrintTest {
         System.out.println("Has Minimum Images: " + aggregate.hasMinimumImages());
         System.out.println("Has Active Variants: " + aggregate.hasActiveVariants());
         System.out.println("Is Publishable: " + aggregate.isPublishable());
-        System.out.println("All Variants Are Draft: " + aggregate.allVariantsAreDraft());
         System.out.println("\nAggregate: " + aggregate);
         System.out.println("========================================\n");
 
