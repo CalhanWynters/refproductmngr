@@ -35,43 +35,55 @@ public class ProductAggSaveImplTest {
 
     @Test
     void testUpsertProduct() {
-        // 1. Arrange Data
+        // 1. Arrange: Prepare 2025 compliant test data
         UUID productId = UUID.randomUUID();
         String validBusinessIdStr = UUID.randomUUID().toString().toUpperCase();
         String category = "Electronics";
         String description = "Latest tech gadget";
+        boolean isDeleted = false;
+        int version = 1;
 
         ProductAggregate product = mock(ProductAggregate.class);
         when(product.id()).thenReturn(new ProductIdVO(productId.toString()));
         when(product.businessIdVO()).thenReturn(new BusinessIdVO(validBusinessIdStr));
         when(product.category()).thenReturn(new CategoryVO(category));
         when(product.description()).thenReturn(new DescriptionVO(description));
-        when(product.isDeleted()).thenReturn(false);
-        when(product.version()).thenReturn(new VersionVO(1));
+        when(product.isDeleted()).thenReturn(isDeleted);
+        when(product.version()).thenReturn(new VersionVO(version));
 
         // 2. Act
         productCommandRepository.save(product);
 
-        // 3. Capture using ArgumentCaptor for the varargs update method
+        // 3. Capture: Grab the exact SQL and every Vararg parameter
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Object> paramsCaptor = ArgumentCaptor.forClass(Object.class);
 
-        // Use any() for the varargs to match the signature jdbcTemplate.update(String, Object...)
-        verify(jdbcTemplate).update(sqlCaptor.capture(), paramsCaptor.capture(), paramsCaptor.capture(),
-                paramsCaptor.capture(), paramsCaptor.capture(),
-                paramsCaptor.capture(), paramsCaptor.capture());
+        // We capture exactly 6 parameters corresponding to the 6 '?' in your SQL
+        verify(jdbcTemplate).update(
+                sqlCaptor.capture(),
+                paramsCaptor.capture(), // id
+                paramsCaptor.capture(), // business_id_vo
+                paramsCaptor.capture(), // category
+                paramsCaptor.capture(), // description
+                paramsCaptor.capture(), // is_deleted
+                paramsCaptor.capture()  // schema_version
+        );
 
-        // 4. Printout for Confirmation
-        System.out.println("=================================================");
-        System.out.println("ACTUAL SQL EXECUTED:");
-        System.out.println("=================================================");
+        // 4. Printout: Output for your confirmation
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("2025 REPOSITORY EXECUTION PRINTOUT");
+        System.out.println("=".repeat(50));
+        System.out.println("ACTUAL SQL:");
         System.out.println(sqlCaptor.getValue());
-        System.out.println("=================================================");
+        System.out.println("-".repeat(50));
         System.out.println("PARAMETERS DETECTED:");
+
         List<Object> capturedParams = paramsCaptor.getAllValues();
+        String[] paramLabels = {"ID", "Business ID", "Category", "Description", "Is Deleted", "Version"};
+
         for (int i = 0; i < capturedParams.size(); i++) {
-            System.out.println("Param [" + i + "]: " + capturedParams.get(i));
+            System.out.printf("Param [%d] (%s): %s%n", i, paramLabels[i], capturedParams.get(i));
         }
-        System.out.println("=================================================");
+        System.out.println("=".repeat(50) + "\n");
     }
 }
