@@ -9,7 +9,6 @@ import com.github.calhanwynters.refproductmngr.businesscore.domain.product.varia
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.util.Currency;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,25 +22,26 @@ public class ProductCreateService {
 
     @Transactional
     public void execute(ProductCreateCommand command) {
-        // 1. Map Features
+        // 1. Map Features using the polymorphic FeatureMapper
         Set<FeatureAbstractClass> featureEntities = command.features().stream()
                 .map(FeatureMapper::toEntity)
                 .collect(Collectors.toSet());
 
-        // 2. Build Initial Variant via Factory
+        // 2. Build Initial Variant via the "Domain Entry" Factory Method
+        // This hides the VO instantiation logic from the Application Service.
         VariantEntity initialVariant = ProductAggregateFactory.createVariant(
-                new SkuVO(command.initialVariantSku()),
-                new PriceVO(command.initialPrice(), 2, Currency.getInstance(command.currencyCode())),
-                new PriceVO(command.initialPrice(), 2, Currency.getInstance(command.currencyCode())),
-                featureEntities,
-                new CareInstructionVO("Default instructions"),
-                new WeightVO(command.weightValue(), WeightUnitEnums.valueOf(command.weightUnit())),
-                VariantStatusEnums.DRAFT
+                command.initialVariantSku(),
+                command.initialPrice(),
+                command.initialPrice(), // Current price starts same as base
+                command.currencyCode(),
+                command.weightValue(),   // Ensure this is BigDecimal for 2025 precision
+                command.weightUnit(),
+                "Default instructions", // Consider moving this to a domain constant
+                VariantStatusEnums.DRAFT.name(),
+                featureEntities
         );
 
         // 3. Assemble Aggregate via Factory
-        // We pass the business context values.
-        // The Factory will decide what the starting VersionVO(num) should be.
         ProductAggregate product = ProductAggregateFactory.create(
                 new BusinessIdVO(command.businessId()),
                 new CategoryVO(command.category()),
@@ -52,5 +52,5 @@ public class ProductCreateService {
 
         productRepository.save(product);
     }
-
 }
+

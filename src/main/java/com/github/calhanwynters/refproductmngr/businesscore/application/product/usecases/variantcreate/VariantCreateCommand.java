@@ -4,9 +4,13 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 public record VariantCreateCommand(
-        String productId, // Which aggregate does this belong to?
         String sku,
-        BigDecimal price,
+        BigDecimal basePrice,
+        BigDecimal currentPrice,
+        String currencyCode,
+        double weightValue,
+        String weightUnit,
         String careInstructions,
-        double weight
+        String status
 ) {}
+

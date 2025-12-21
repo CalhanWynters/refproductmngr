@@ -51,29 +51,33 @@ public final class FeatureMapper {
     public static FeatureAbstractClass toEntity(FeatureDTO dto) {
         if (dto == null) return null;
 
-        // Shared Value Objects
+        // 1. Map Shared Value Objects
         NameVO nameVO = new NameVO(dto.name());
         LabelVO labelVO = new LabelVO(dto.label());
         DescriptionVO descVO = dto.description() != null ? new DescriptionVO(dto.description()) : null;
         boolean isUnique = dto.isUnique();
 
-        // If ID is present (Update), reconstruct; if null (Create), let factory generate.
-        FeatureIdVO idVO = (dto.id() != null && !dto.id().isBlank())
-                ? FeatureIdVO.fromString(dto.id())
-                : null;
+        // 2. Identify Intent: Create vs. Update
+        boolean isUpdate = dto.id() != null && !dto.id().isBlank();
+        FeatureIdVO idVO = isUpdate ? FeatureIdVO.fromString(dto.id()) : null;
 
+        // 3. Delegate to Factory via Switch Expression
         return switch (dto) {
-            case BasicFeatureDTO d -> idVO != null
-                    ? new FeatureBasicEntity(idVO, nameVO, descVO, labelVO, isUnique)
+            case BasicFeatureDTO d -> isUpdate
+                    ? ProductAggregateFactory.reconstructBasicFeature(idVO, nameVO, labelVO, descVO, isUnique)
                     : ProductAggregateFactory.createBasicFeature(nameVO, labelVO, descVO, isUnique);
 
-            case FixedPriceFeatureDTO d -> idVO != null
-                    ? new FeatureFixedPriceEntity(idVO, nameVO, descVO, labelVO, d.fixedPrice(), isUnique)
+            case FixedPriceFeatureDTO d -> isUpdate
+                    ? ProductAggregateFactory.reconstructFixedPriceFeature(idVO, nameVO, labelVO, descVO, d.fixedPrice(), isUnique)
                     : ProductAggregateFactory.createFixedPriceFeature(nameVO, labelVO, descVO, d.fixedPrice(), isUnique);
 
-            case ScalingPriceFeatureDTO d -> idVO != null
-                    ? new FeatureScalingPriceEntity(idVO, nameVO, descVO, labelVO, new MeasurementUnitVO(d.unit()), d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique)
-                    : ProductAggregateFactory.createScalingPriceFeature(nameVO, labelVO, descVO, new MeasurementUnitVO(d.unit()), d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique);
+            case ScalingPriceFeatureDTO d -> {
+                MeasurementUnitVO unitVO = new MeasurementUnitVO(d.unit());
+                yield isUpdate
+                        ? ProductAggregateFactory.reconstructScalingPriceFeature(idVO, nameVO, labelVO, descVO, unitVO, d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique)
+                        : ProductAggregateFactory.createScalingPriceFeature(nameVO, labelVO, descVO, unitVO, d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique);
+            }
         };
     }
+
 }

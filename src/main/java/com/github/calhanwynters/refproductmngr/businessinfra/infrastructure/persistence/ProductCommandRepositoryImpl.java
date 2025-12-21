@@ -62,13 +62,13 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
 
         // 1. UPSERT Main Product (Now including Business Version)
         final String productSql = """
-        INSERT INTO products (id, business_id_vo, category, description, is_deleted, schema_version)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT (id) DO UPDATE SET
-            category = EXCLUDED.category,
-            description = EXCLUDED.description,
-            is_deleted = EXCLUDED.is_deleted,
-            schema_version = EXCLUDED.schema_version;
+    INSERT INTO products (id, business_id_vo, category, description, is_deleted, schema_version)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT (id) DO UPDATE SET
+        category = EXCLUDED.category,
+        description = EXCLUDED.description,
+        is_deleted = EXCLUDED.is_deleted,
+        schema_version = EXCLUDED.schema_version;
     """;
         jdbcTemplate.update(productSql,
                 productId,
@@ -78,15 +78,16 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
                 product.isDeleted(),
                 currentBusinessVersion);
 
-        // 2. UPSERT Variants
+        // 2. UPSERT Variants (now storing weight amount + unit)
         final String variantSql = """
-        INSERT INTO product_variants (id, product_id, sku, status, base_price, current_price, weight, care_instructions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT (id) DO UPDATE SET
-            status = EXCLUDED.status,
-            current_price = EXCLUDED.current_price,
-            weight = EXCLUDED.weight,
-            care_instructions = EXCLUDED.care_instructions;
+    INSERT INTO product_variants (id, product_id, sku, status, base_price, current_price, weight_amount, weight_unit, care_instructions)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (id) DO UPDATE SET
+        status = EXCLUDED.status,
+        current_price = EXCLUDED.current_price,
+        weight_amount = EXCLUDED.weight_amount,
+        weight_unit = EXCLUDED.weight_unit,
+        care_instructions = EXCLUDED.care_instructions;
     """;
 
         List<VariantEntity> variants = List.copyOf(product.variants());
@@ -95,27 +96,29 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
             ps.setObject(2, productId);
             ps.setString(3, variant.sku().sku());
             ps.setString(4, variant.status().name());
+            // Ensure your PriceVO.value() returns BigDecimal with correct scale
             ps.setBigDecimal(5, variant.basePrice().value());
             ps.setBigDecimal(6, variant.currentPrice().value());
-            ps.setObject(7, variant.weight().amount());
-            ps.setString(8, variant.careInstructions().instructions());
+            // Weight amount and unit preservation
+            ps.setBigDecimal(7, variant.weight().amount());
+            ps.setString(8, variant.weight().unit().name());
+            ps.setString(9, variant.careInstructions().instructions());
         });
 
         // 3. UPSERT Feature Definitions (Master Features Table)
-        // Extract unique features across all variants to minimize DB hits
         Map<String, FeatureAbstractClass> distinctFeatures = variants.stream()
                 .flatMap(v -> v.getFeatures().stream())
                 .collect(Collectors.toMap(f -> f.getId().value(), f -> f, (f1, f2) -> f1));
 
         final String featureDefinitionSql = """
-        INSERT INTO features (id, name, label, description, is_unique, feature_type, attributes)
-        VALUES (?, ?, ?, ?, ?, ?, ?::jsonb)
-        ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name,
-            label = EXCLUDED.label,
-            description = EXCLUDED.description,
-            is_unique = EXCLUDED.is_unique,
-            attributes = EXCLUDED.attributes;
+    INSERT INTO features (id, name, label, description, is_unique, feature_type, attributes)
+    VALUES (?, ?, ?, ?, ?, ?, ?::jsonb)
+    ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        label = EXCLUDED.label,
+        description = EXCLUDED.description,
+        is_unique = EXCLUDED.is_unique,
+        attributes = EXCLUDED.attributes;
     """;
 
         jdbcTemplate.batchUpdate(featureDefinitionSql, distinctFeatures.values(), 500, (ps, feature) -> {
@@ -125,7 +128,6 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
             ps.setString(4, feature.getDescription() != null ? feature.getDescription().text() : null);
             ps.setBoolean(5, feature.isUnique());
 
-            // Polymorphic Mapping to JSONB
             Map<String, Object> attrMap = new HashMap<>();
             String type = "BASIC";
 
@@ -141,18 +143,15 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
             }
 
             ps.setString(6, type);
+            // Ensure serializeToJson uses Jackson with JavaTimeModule and proper VO serializers
             ps.setString(7, serializeToJson(attrMap));
         });
 
         // 4. SYNC Variant-to-Feature Links (Join Table)
-        List<UUID> variantUuids = variants.stream()
-                .map(v -> UUID.fromString(v.id().value()))
-                .toList();
-
-        // Clear old links for the variants in this aggregate to ensure a clean sync
+        // Delete existing links for the product (handles removed/orphaned variants)
         namedParameterJdbcTemplate.update(
-                "DELETE FROM variant_features WHERE variant_id IN (:ids)",
-                Map.of("ids", variantUuids)
+                "DELETE FROM variant_features vf USING product_variants pv WHERE vf.variant_id = pv.id AND pv.product_id = :productId",
+                Map.of("productId", productId)
         );
 
         final String linkSql = "INSERT INTO variant_features (variant_id, feature_id) VALUES (?, ?)";
@@ -168,20 +167,21 @@ public class ProductCommandRepositoryImpl implements ProductCommandRepository {
         });
 
         // 5. TRANSACTIONAL OUTBOX
-        // Captures the full snapshot + business version for event-driven synchronization
         final String outboxSql = """
-        INSERT INTO outbox_messages (id, aggregate_type, aggregate_id, event_type, payload, schema_version, created_at)
-        VALUES (?, 'PRODUCT', ?, 'PRODUCT_UPDATED', ?::jsonb, ?, NOW())
+    INSERT INTO outbox_messages (id, aggregate_type, aggregate_id, event_type, payload, schema_version, created_at)
+    VALUES (?, 'PRODUCT', ?, 'PRODUCT_UPDATED', ?::jsonb, ?, NOW())
     """;
         jdbcTemplate.update(outboxSql,
                 UUID.randomUUID(),
                 product.id().value(),
+                // Ensure serializeToJson(product) flattens VOs appropriately
                 serializeToJson(product),
                 currentBusinessVersion);
     }
 
     // Internal record for batch link management
     private record FeatureJoin(UUID variantId, UUID featureId) {}
+
 
     /**
      * HARD DELETE: Physical removal of the Aggregate Root.

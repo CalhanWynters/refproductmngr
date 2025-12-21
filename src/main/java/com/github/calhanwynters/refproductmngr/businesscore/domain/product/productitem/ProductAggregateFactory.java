@@ -5,6 +5,8 @@ import com.github.calhanwynters.refproductmngr.businesscore.domain.product.featu
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 
 import java.math.BigDecimal;
+import java.util.Currency;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -20,10 +22,19 @@ public class ProductAggregateFactory {
         return new FeatureBasicEntity(FeatureIdVO.generate(), name, desc, label, isUnique);
     }
 
+    public static FeatureBasicEntity reconstructBasicFeature(FeatureIdVO id, NameVO n, LabelVO l, DescriptionVO d, boolean u) {
+        return new FeatureBasicEntity(id, n, d, l, u);
+    }
+
     public static FeatureFixedPriceEntity createFixedPriceFeature(
             NameVO name, LabelVO label, DescriptionVO desc, BigDecimal price, boolean isUnique) {
         return new FeatureFixedPriceEntity(FeatureIdVO.generate(), name, desc, label, price, isUnique);
     }
+
+    public static FeatureFixedPriceEntity reconstructFixedPriceFeature(FeatureIdVO id, NameVO n, LabelVO l, DescriptionVO d, BigDecimal p, boolean u) {
+        return new FeatureFixedPriceEntity(id, n, d, l, p, u);
+    }
+
 
     public static FeatureScalingPriceEntity createScalingPriceFeature(
             NameVO name, LabelVO label, DescriptionVO desc, MeasurementUnitVO unit,
@@ -32,19 +43,63 @@ public class ProductAggregateFactory {
                 FeatureIdVO.generate(), name, desc, label, unit, base, increment, max, isUnique);
     }
 
+    public static FeatureScalingPriceEntity reconstructScalingPriceFeature(FeatureIdVO id, NameVO n, LabelVO l, DescriptionVO d, MeasurementUnitVO unit, BigDecimal b, BigDecimal i, int m, boolean u) {
+        return new FeatureScalingPriceEntity(id, n, d, l, unit, b, i, m, u);
+    }
+
     // --- VARIANT CREATION ---
 
-    public static VariantEntity createVariant(
-            SkuVO sku, PriceVO basePrice, PriceVO currentPrice,
-            Set<FeatureAbstractClass> features, CareInstructionVO care,
-            WeightVO weight, VariantStatusEnums status) {
+    // Inside ProductAggregateFactory.java
 
-        // Factory provides the ID and ensures features set isn't null
+    // 1. The Strict Factory (What you have - Keep it!)
+    /**
+     * DOMAIN ENTRY: Creates a Variant from primitive data.
+     * The Set<FeatureAbstractClass> parameter is mandatory to resolve the method signature.
+     */
+    public static VariantEntity createVariant(
+            String sku,
+            BigDecimal base,
+            BigDecimal current,
+            String currency,
+            BigDecimal weightValue,   // Changed from double to BigDecimal
+            String unit,
+            String care,
+            String status,
+            Set<FeatureAbstractClass> features) {
+
+        return createVariant(
+                new SkuVO(sku),
+                new PriceVO(base, 2, Currency.getInstance(currency)),
+                new PriceVO(current, 2, Currency.getInstance(currency)),
+                features != null ? features : new HashSet<>(),
+                new CareInstructionVO(care),
+                new WeightVO(weightValue, WeightUnitEnums.valueOf(unit)), // Matches WeightVO(BigDecimal, unit)
+                VariantStatusEnums.valueOf(status)
+        );
+    }
+
+
+    /**
+     * STRICT FACTORY: The core assembly method using Value Objects.
+     */
+    public static VariantEntity createVariant(
+            SkuVO sku,
+            PriceVO basePrice,
+            PriceVO currentPrice,
+            Set<FeatureAbstractClass> features,
+            CareInstructionVO care,
+            WeightVO weight,
+            VariantStatusEnums status) {
+
         return new VariantEntity(
                 VariantIdVO.generate(),
-                sku, basePrice, currentPrice,
+                sku,
+                basePrice,
+                currentPrice,
                 features != null ? features : Set.of(),
-                care, weight, status
+                care,
+                weight,
+                status
         );
     }
 
@@ -86,4 +141,6 @@ public class ProductAggregateFactory {
             VersionVO version, boolean isDeleted) {
         return new ProductAggregate(id, businessId, category, desc, gallery, variants, version, isDeleted);
     }
+
+
 }

@@ -4,14 +4,11 @@ import com.github.calhanwynters.refproductmngr.businesscore.application.product.
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductCommandRepository;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.exceptions.ProductNotFoundException;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregate;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregateFactory;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductIdVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Currency;
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 public class VariantCreateService {
@@ -23,60 +20,27 @@ public class VariantCreateService {
 
     @Transactional
     public void execute(String productId, VariantDTO dto) {
-        // 1. Load
+        // 1. Load the Aggregate
         ProductAggregate product = productCommandRepository.findById(new ProductIdVO(productId))
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + productId));
 
-        // 2. Map DTO to Entity
-        VariantEntity newVariant = new VariantEntity(
-                VariantIdVO.generate(),
-                new SkuVO(dto.sku()),
-                new PriceVO(dto.basePrice(), 2, Currency.getInstance(dto.currencyCode())),
-                new PriceVO(dto.currentPrice(), 2, Currency.getInstance(dto.currencyCode())),
-                new java.util.HashSet<>(),
-                new CareInstructionVO(dto.careInstructions()),
-                new WeightVO(dto.weightValue(), WeightUnitEnums.valueOf(dto.weightUnit())),
-                VariantStatusEnums.valueOf(dto.status())
+        // 2. Build the Variant via Factory
+        // Use Set.of() instead of null to be explicit and avoid the redundancy warning
+        VariantEntity newVariant = ProductAggregateFactory.createVariant(
+                dto.sku(),
+                dto.basePrice(),
+                dto.currentPrice(),
+                dto.currencyCode(),
+                dto.weightValue(), // Ensure Factory signature is BigDecimal
+                dto.weightUnit(),
+                dto.careInstructions(),
+                dto.status(),
+                java.util.Set.of()
         );
 
-        // 3. Modify (Delegates to Aggregate Root)
-        ProductAggregate updatedProduct = product.addVariant(newVariant);
-
-        // 4. Save (Triggers DB updates and Outbox Snapshot)
-        productCommandRepository.save(updatedProduct);
+        // 3. Mutate and Save
+        product.addVariant(newVariant);
+        productCommandRepository.save(product);
     }
 
-    /**
-     * Extracts the mapping and aggregate reconstruction logic.
-     * Keeps the original ProductAggregate file untouched.
-     */
-    private ProductAggregate createUpdatedProductWithNewVariant(ProductAggregate product, VariantDTO dto) {
-        // Build the new entity
-        VariantEntity newVariant = new VariantEntity(
-                VariantIdVO.generate(),
-                new SkuVO(dto.sku()),
-                new PriceVO(dto.basePrice(), 2, Currency.getInstance(dto.currencyCode())),
-                new PriceVO(dto.currentPrice(), 2, Currency.getInstance(dto.currencyCode())),
-                new HashSet<>(),
-                new CareInstructionVO(dto.careInstructions()),
-                new WeightVO(dto.weightValue(), WeightUnitEnums.valueOf(dto.weightUnit())),
-                VariantStatusEnums.valueOf(dto.status())
-        );
-
-        // Manage the collection
-        Set<VariantEntity> updatedVariants = new HashSet<>(product.variants());
-        updatedVariants.add(newVariant);
-
-        // Reconstruct the immutable Aggregate
-        return new ProductAggregate(
-                product.id(),
-                product.businessIdVO(),
-                product.category(),
-                product.description(),
-                product.gallery(),
-                updatedVariants,
-                product.version(),
-                product.isDeleted()
-        );
-    }
 }
