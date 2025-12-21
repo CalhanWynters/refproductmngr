@@ -1,20 +1,21 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
-import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.*;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureAbstractClass;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureBasicEntity;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureFixedPriceEntity;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureScalingPriceEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.VariantDTO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
 
 import java.util.stream.Collectors;
 
+/**
+ * 2025 Mapper for Variant entities.
+ * Delegates feature mapping to FeatureMapper to ensure consistency across the aggregate.
+ */
 public final class VariantMapper {
 
     private VariantMapper() {}
 
     /**
-     * Maps VariantEntity to VariantDTO for the Application Layer.
+     * Maps VariantEntity (Domain) to VariantDTO (Application).
+     * Used when sending product details to the UI/API.
      */
     public static VariantDTO toDTO(VariantEntity variant) {
         if (variant == null) return null;
@@ -25,34 +26,14 @@ public final class VariantMapper {
                 variant.basePrice().value(),
                 variant.currentPrice().value(),
                 variant.basePrice().currency().getCurrencyCode(),
-                variant.features().stream()
-                        .map(VariantMapper::mapFeatureToDTO)
+                // Delegate to FeatureMapper for polymorphic feature transformation
+                variant.getFeatures().stream()
+                        .map(FeatureMapper::toDTO)
                         .collect(Collectors.toSet()),
                 variant.careInstructions().instructions(),
-                variant.weight().amount(), // Accessing .amount() from WeightVO record
-                variant.weight().unit().name(), // e.g., "GRAM" or "KILOGRAM"
+                variant.weight().amount(),
+                variant.weight().unit().name(),
                 variant.status().name()
         );
-    }
-
-    /**
-     * Internal polymorphic mapping using Java 2025 pattern matching.
-     */
-    private static FeatureDTO mapFeatureToDTO(FeatureAbstractClass feature) {
-        String desc = feature.getDescription() != null ? feature.getDescription().text() : null;
-
-        return switch (feature) {
-            case FeatureBasicEntity f ->
-                    new BasicFeatureDTO(f.getId().value(), f.getNameVO().value(), desc, f.getLabelVO().value());
-
-            case FeatureFixedPriceEntity f ->
-                    new FixedPriceFeatureDTO(f.getId().value(), f.getNameVO().value(), desc, f.getLabelVO().value(), f.getFixedPrice());
-
-            case FeatureScalingPriceEntity f ->
-                    new ScalingPriceFeatureDTO(f.getId().value(), f.getNameVO().value(), desc, f.getLabelVO().value(),
-                            f.getMeasurementUnit().unit(), f.getBaseAmount(), f.getIncrementAmount(), f.getMaxQuantity());
-
-            default -> throw new IllegalArgumentException("Unsupported feature type: " + feature.getClass());
-        };
     }
 }

@@ -33,7 +33,45 @@ public record ProductAggregate(
         variants = Set.copyOf(variants);
     }
 
+    // --- Validations & Checks ---
+
+    public boolean hasMinimumImages() {
+        // Current rule: at least 1 image.
+        // Future rule: return this.gallery.images().size() >= 3;
+        return !this.gallery.images().isEmpty();
+    }
+
+    public boolean isPublishable() {
+        // Reads like a business document
+        return !isDeleted && hasMinimumImages() && hasActiveVariants();
+    }
+
+    public boolean hasActiveVariants() {
+        if (this.isDeleted) return false;
+        return this.variants.stream().anyMatch(VariantEntity::isActive);
+    }
+
     // --- Domain Behaviors (Commands) ---
+    /*
+    --- Update Actions ---
+        * DELETE Commands are handled directly with databases. Outside ProductAggregate.
+        - Product
+            - applying soft-delete mark
+            - updating category & description
+            * Need to be able to add or remove gallery image urls.
+        - Variants
+            - updating variant status
+            - adding a new variant
+            - update sku
+            - update base price
+            - update current price ??? maybe
+            - update features
+            - update care instructions
+            - update weight
+        - Features
+            * might need to consider adding an optional variant specific lock mechanism.
+            - update name, description, & label
+     */
 
     public ProductAggregate updateVariantStatus(VariantIdVO variantId, VariantStatusEnums newStatus) {
         // Invariant: Verify membership within this aggregate boundary
@@ -89,21 +127,6 @@ public record ProductAggregate(
         );
     }
 
-    // --- Query Methods (Read-side optimizations) ---
+    public VersionVO getVersion() { return this.version; }
 
-    public boolean hasMinimumImages() {
-        // Current rule: at least 1 image.
-        // Future rule: return this.gallery.images().size() >= 3;
-        return !this.gallery.images().isEmpty();
-    }
-
-    public boolean isPublishable() {
-        // Reads like a business document
-        return !isDeleted && hasMinimumImages() && hasActiveVariants();
-    }
-
-    public boolean hasActiveVariants() {
-        if (this.isDeleted) return false;
-        return this.variants.stream().anyMatch(VariantEntity::isActive);
-    }
 }

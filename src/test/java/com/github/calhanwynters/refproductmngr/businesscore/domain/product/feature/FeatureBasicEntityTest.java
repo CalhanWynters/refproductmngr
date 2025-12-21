@@ -12,15 +12,15 @@ class FeatureBasicEntityTest {
     private NameVO validName;
     private DescriptionVO validDescription;
     private LabelVO validLabel;
+    private Boolean validIsUnique;
 
     @BeforeEach
     void setUp() {
         validId = FeatureIdVO.generate();
         validName = new NameVO("Basic Feature Name");
-        // Ensure this text meets the assumed minimum length validation of DescriptionVO
-        // (Assuming DescriptionVO is validated elsewhere to be a valid VO)
         validDescription = new DescriptionVO("A text is at least 10 characters long.");
         validLabel = new LabelVO("Feature Label");
+        validIsUnique = true;
     }
 
     @Test
@@ -30,7 +30,8 @@ class FeatureBasicEntityTest {
                 validId,
                 validName,
                 validDescription,
-                validLabel
+                validLabel,
+                validIsUnique
         );
 
         // Assert
@@ -39,6 +40,7 @@ class FeatureBasicEntityTest {
         assertEquals(validName, entity.getNameVO(), "Name should match the provided VO.");
         assertEquals(validDescription, entity.getDescription(), "Description VO should match the provided VO.");
         assertEquals(validLabel, entity.getLabelVO(), "Label VO should match the provided VO.");
+        assertEquals(validIsUnique, entity.isUnique(), "The isUnique flag should match the provided value.");
     }
 
     @Test
@@ -47,8 +49,9 @@ class FeatureBasicEntityTest {
         FeatureIdVO nullId = null;
 
         // Act & Assert
-        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(nullId, validName, validDescription, validLabel));
-        // This message assumes the check is in FeatureAbstractClass constructor
+        var exception = assertThrows(NullPointerException.class, () ->
+                new FeatureBasicEntity(nullId, validName, validDescription, validLabel, validIsUnique));
+
         assertEquals("Feature ID must not be null", exception.getMessage());
     }
 
@@ -58,8 +61,9 @@ class FeatureBasicEntityTest {
         NameVO nullName = null;
 
         // Act & Assert
-        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(validId, nullName, validDescription,validLabel));
-        // This message assumes the check is in FeatureAbstractClass constructor
+        var exception = assertThrows(NullPointerException.class, () ->
+                new FeatureBasicEntity(validId, nullName, validDescription, validLabel, validIsUnique));
+
         assertEquals("Feature Name VO must not be null", exception.getMessage());
     }
 
@@ -69,44 +73,45 @@ class FeatureBasicEntityTest {
         LabelVO nullLabel = null;
 
         // Act & Assert
-        var exception = assertThrows(NullPointerException.class, () -> new FeatureBasicEntity(validId, validName, validDescription, nullLabel));
-        // Assert the expected error message for the null label check
+        var exception = assertThrows(NullPointerException.class, () ->
+                new FeatureBasicEntity(validId, validName, validDescription, nullLabel, validIsUnique));
+
         assertEquals("Feature Label VO must not be null", exception.getMessage());
     }
 
     @Test
     void testFeatureBasicEntityCreation_NullDescriptionVO_Succeeds() {
-        // FIX: The FeatureAbstractClass allows null descriptions. We test that this works as intended.
         // Arrange
         DescriptionVO nullDescription = null;
 
-        // Act & Assert
-        assertDoesNotThrow(() -> new FeatureBasicEntity(validId, validName, nullDescription, validLabel),
-                "Feature creation should allow a null text VO.");
+        // Act
+        FeatureBasicEntity entity = new FeatureBasicEntity(validId, validName, nullDescription, validLabel, validIsUnique);
 
-        FeatureBasicEntity entity = new FeatureBasicEntity(validId, validName, nullDescription, validLabel);
-        assertNull(entity.getDescription(), "The text getter should return null if a null VO was provided.");
+        // Assert
+        assertNotNull(entity);
+        assertNull(entity.getDescription(), "The description getter should return null if a null VO was provided.");
     }
 
     @Test
     void testEquality_SameId_AreEqual() {
         // Arrange
-        // Create two entities with different VO instances for Name/Label, but the SAME ID
+        // Entities are compared by ID in DDD; other fields can differ
         FeatureBasicEntity entity1 = new FeatureBasicEntity(
                 validId,
                 new NameVO("Name One"),
                 validDescription,
-                validLabel
+                validLabel,
+                true
         );
         FeatureBasicEntity entity2 = new FeatureBasicEntity(
-                validId, // Same ID
+                validId,
                 new NameVO("Name Two"),
                 validDescription,
-                validLabel
+                validLabel,
+                false
         );
 
         // Act & Assert
-        // Assuming equality is based solely on the 'id' field within FeatureAbstractClass
         assertEquals(entity1, entity2, "Entities with the same ID should be equal.");
         assertEquals(entity1.hashCode(), entity2.hashCode(), "Hash codes should match for equal objects.");
     }
@@ -118,15 +123,17 @@ class FeatureBasicEntityTest {
                 validId,
                 validName,
                 validDescription,
-                validLabel
+                validLabel,
+                validIsUnique
         );
 
         FeatureIdVO differentId = FeatureIdVO.generate();
         FeatureBasicEntity entity2 = new FeatureBasicEntity(
-                differentId, // Different ID
+                differentId,
                 validName,
                 validDescription,
-                validLabel
+                validLabel,
+                validIsUnique
         );
 
         // Act & Assert

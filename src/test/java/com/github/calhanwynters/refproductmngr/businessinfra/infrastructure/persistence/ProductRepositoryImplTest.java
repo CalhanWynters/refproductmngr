@@ -23,6 +23,16 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+import static org.assertj.core.api.Assertions.assertThat;
+
+
+// Spring Data MongoDB Fluent API Interfaces
+import org.springframework.data.mongodb.core.ExecutableFindOperation.ExecutableFind;
+import org.springframework.data.mongodb.core.ExecutableFindOperation.TerminatingFind;
+
+// Core MongoDB Query and Mockito
+
 
 public class ProductRepositoryImplTest {
 
@@ -49,20 +59,30 @@ public class ProductRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("Should return a product when it exists in the database")
+    @DisplayName("Should return product when IDs match existing database record")
     void testFindProductByProductIdAndBusinessId_Success() {
-        ProductAggregate product = createValidProductAggregate();
+        // Arrange
+        ProductAggregate expectedProduct = createValidProductAggregate();
+        ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
 
-        when(mongoTemplate.query(ProductAggregate.class)
-                .matching(any(Query.class))
-                .oneValue())
-                .thenReturn(product);
+        // Using Mockito's type inference to avoid unchecked assignment warnings
+        ExecutableFind<ProductAggregate> executableFind = mock();
+        TerminatingFind<ProductAggregate> terminatingFind = mock();
 
-        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
+        when(mongoTemplate.query(ProductAggregate.class)).thenReturn(executableFind);
+        when(executableFind.matching(queryCaptor.capture())).thenReturn(terminatingFind);
+        when(terminatingFind.oneValue()).thenReturn(expectedProduct);
 
-        assertTrue(result.isPresent());
-        assertEquals(product, result.get());
+        // Act
+        var result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
+
+        // Assert
+        assertThat(result).isPresent().contains(expectedProduct);
     }
+
+
+
+
 
     @Test
     @DisplayName("Should return empty Optional when no product matches the criteria")

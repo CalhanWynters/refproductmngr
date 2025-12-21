@@ -11,18 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper; // Add this import
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -30,19 +25,12 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataMongoTest
-@Testcontainers // Automatically manages container lifecycle
+@Testcontainers
 public class ProductRepositoryImplIntegrationTest {
 
-    // Define the MongoDB container (shared across all tests in this class)
     @Container
     @ServiceConnection
     static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:7.0.0");
-
-    // Link the container's dynamic connection string to Spring Data
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
-    }
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -55,7 +43,7 @@ public class ProductRepositoryImplIntegrationTest {
     void setUp() {
         productRepository = new ProductRepositoryImpl(mongoTemplate);
         productId = ProductIdVO.generate();
-        businessId = new BusinessIdVO("BIZ-456");
+        businessId = new BusinessIdVO("BIZ-TEST-2025");
     }
 
     @AfterEach
@@ -64,194 +52,94 @@ public class ProductRepositoryImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should persist and retrieve a product from the database using real MongoDB container")
-    void testPersistAndRetrieveProduct() {
-        // Arrange
-        ProductAggregate product = createValidProductAggregate();
-
-        // Act: Save directly via template
-        mongoTemplate.save(product);
-
-        // Act: Retrieve using repository implementation
-        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
-
-        // Assert: Using record accessor methods id() and businessIdVO()
-        assertTrue(result.isPresent(), "Expected product to be found");
-        assertEquals(productId.value(), result.get().id().value());
-        assertEquals(businessId.value(), result.get().businessIdVO().value());
-    }
-
-    private ProductAggregate createValidProductAggregate() {
-        ImageUrlVO image = new ImageUrlVO("https://cdn.example.com/item.jpg");
-        GalleryVO gallery = new GalleryVO(List.of(image));
-
-        // Create at least one variant to satisfy domain validation
-        VariantEntity defaultVariant = new VariantEntity(
-                VariantIdVO.generate(),
-                new SkuVO("SKU-DEFAULT"),
-                new PriceVO(BigDecimal.TEN),
-                new PriceVO(BigDecimal.TEN),
-                Collections.emptySet(),
-                new CareInstructionVO("* Please wash your hands."),
-                new WeightVO(BigDecimal.ONE, WeightUnitEnums.KILOGRAM),
-                VariantStatusEnums.ACTIVE
-        );
-
-        return new ProductAggregate(
-                productId,
-                businessId,
-                new CategoryVO("Electronics"),
-                new DescriptionVO("Sample Description"),
-                gallery,
-                Set.of(defaultVariant), // Pass the set containing the variant
-                new VersionVO(1),
-                false
-        );
-    }
-
-    @Test
-    @DisplayName("Should persist and retrieve a product from the database using real MongoDB container")
-    void testPrintPersistAndRetrieveProduct() throws Exception {
-        ProductAggregate product = createValidProductAggregate();
-        mongoTemplate.save(product);
-
-        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
-
-        // --- PRINT OUT DATA ---
-        if (result.isPresent()) {
-            ObjectMapper mapper = new ObjectMapper()
-                    .enable(SerializationFeature.INDENT_OUTPUT); // Format with indentation
-
-            String json = mapper.writeValueAsString(result.get());
-
-            System.out.println("\n=== RETRIEVED PRODUCT DATA (2025-12-18) ===");
-            System.out.println(json);
-            System.out.println("===========================================\n");
-        }
-        // ----------------------
-
-        assertTrue(result.isPresent());
-        assertEquals(productId.value(), result.get().id().value());
-    }
-
-    @Test
-    @DisplayName("Should persist and retrieve a product with features from the database")
+    @DisplayName("Should persist and retrieve a product with 2025 polymorphic features")
     void testPersistAndRetrieveProductWithFeatures() {
         // Arrange
         ProductAggregate product = createValidProductAggregateWithFeatures();
 
-        // Act: Save directly via template
+        // Act: Save via template
         mongoTemplate.save(product);
 
         // Act: Retrieve using repository implementation
-        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(product.id(), product.businessIdVO());
+        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(productId, businessId);
 
-        // Assert: Check if the product retrieved has the expected features
-        assertTrue(result.isPresent(), "Expected product to be found");
-        assertEquals(product.id().value(), result.get().id().value());
-        assertEquals(product.businessIdVO().value(), result.get().businessIdVO().value());
+        // --- SAFE PRINT LOGIC (No extra dependencies) ---
+        if (result.isPresent()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+                String json = mapper.writeValueAsString(result.get());
+                System.out.println("\n=== RETRIEVED PRODUCT JSON ProductRepositoryImplIntegrationTest PRINT ===");
+                System.out.println(json);
+                System.out.println("===========================================\n");
+            } catch (Exception e) {
+                System.out.println("\n=== RETRIEVED PRODUCT TOSTRING (Serialization Fallback) ===");
+                System.out.println(result.get());
+                System.out.println("===========================================================\n");
+            }
+        }
 
-        // Check if features are present in the first variant
-        assertFalse(result.get().variants().isEmpty(), "Expected product to have at least one variant");
-        Set<VariantEntity> variants = result.get().variants();
-        assertTrue(variants.stream().anyMatch(v -> !v.getFeatures().isEmpty()), "Expected at least one variant to have features");
+        // Assert: Core Identity
+        assertTrue(result.isPresent(), "Expected product to be found in MongoDB");
+        assertEquals(productId.value(), result.get().id().value());
+        assertEquals(businessId.value(), result.get().businessIdVO().value());
+
+        // Assert: 2025 Domain Invariants
+        ProductAggregate retrieved = result.get();
+        assertEquals(1, retrieved.version().num(), "Business version should be 1");
+        assertFalse(retrieved.isDeleted(), "Product should not be soft-deleted");
+
+        // Assert: Features and isUnique flag
+        VariantEntity variant = retrieved.variants().iterator().next();
+        assertFalse(variant.getFeatures().isEmpty(), "Variant should contain features");
+
+        boolean hasUniqueFeature = variant.getFeatures().stream()
+                .anyMatch(FeatureAbstractClass::isUnique);
+        assertTrue(hasUniqueFeature, "At least one feature should be marked as unique per 2025 data");
     }
 
     private ProductAggregate createValidProductAggregateWithFeatures() {
-        // Create features using the extracted method
-        Set<FeatureAbstractClass> features = createFeatureSet();
+        // Create features using 2025 constructor signature (including isUnique)
+        FeatureBasicEntity colorFeature = new FeatureBasicEntity(
+                FeatureIdVO.generate(),
+                new NameVO("Color"),
+                new DescriptionVO("Midnight Blue"),
+                new LabelVO("Color"),
+                true // isUnique
+        );
 
-        // Create a variant with features
+        FeatureBasicEntity materialFeature = new FeatureBasicEntity(
+                FeatureIdVO.generate(),
+                new NameVO("Material"),
+                new DescriptionVO("Organic Cotton"),
+                new LabelVO("Material"),
+                false // NOT unique
+        );
+
+        Set<FeatureAbstractClass> features = Set.of(colorFeature, materialFeature);
+
+        // Create initial variant with 2025 precision requirements
         VariantEntity variant = new VariantEntity(
-                VariantIdVO.generate(),  // Generate a valid UUID for the variant ID
-                new SkuVO("SKU-123"),
-                new PriceVO(BigDecimal.valueOf(19.99)),
-                new PriceVO(BigDecimal.valueOf(19.99)),
+                VariantIdVO.generate(),
+                new SkuVO("SKU-2025-001"),
+                new PriceVO(new BigDecimal("49.99"), 2, Currency.getInstance("USD")),
+                new PriceVO(new BigDecimal("44.99"), 2, Currency.getInstance("USD")),
                 features,
-                new CareInstructionVO("* Hand wash only"),
-                new WeightVO(BigDecimal.valueOf(0.5), WeightUnitEnums.KILOGRAM),
+                new CareInstructionVO("* Dry clean only"),
+                new WeightVO(new BigDecimal("0.350"), WeightUnitEnums.KILOGRAM),
                 VariantStatusEnums.ACTIVE
         );
 
-        ImageUrlVO image = new ImageUrlVO("https://cdn.example.com/item.jpg");
-        GalleryVO gallery = new GalleryVO(List.of(image));
+        GalleryVO gallery = new GalleryVO(List.of(new ImageUrlVO("https://cdn.example.com/p1.jpg")));
 
         return new ProductAggregate(
                 productId,
                 businessId,
-                new CategoryVO("Electronics"),
-                new DescriptionVO("Sample Description"),
+                new CategoryVO("Apparel"),
+                new DescriptionVO("Sample product for 2025 persistence testing"),
                 gallery,
                 Set.of(variant),
-                new VersionVO(1),
-                false
+                new VersionVO(1), // Business Context Version
+                false // isDeleted
         );
     }
-
-
-    // New method to create the features
-    private Set<FeatureAbstractClass> createFeatureSet() {
-        FeatureAbstractClass colorFeature = new FeatureBasicEntity(
-                FeatureIdVO.generate(),  // Generate a valid UUID for color feature
-                new NameVO("Color"),
-                new DescriptionVO("The color of the product"),
-                new LabelVO("Color Label")
-        );
-
-        FeatureAbstractClass sizeFeature = new FeatureBasicEntity(
-                FeatureIdVO.generate(),  // Generate a valid UUID for size feature
-                new NameVO("Size"),
-                new DescriptionVO("The size of the product"),
-                new LabelVO("Size Label")
-        );
-
-        return Set.of(colorFeature, sizeFeature);
-    }
-
-    @Test
-    @DisplayName("Should print out retrieved product details from the database")
-    void testPrintPersistAndRetrieveProductWithFeatures() {
-        // Arrange
-        ProductAggregate product = createValidProductAggregateWithFeatures();
-
-        // Act: Save directly via template
-        mongoTemplate.save(product);
-
-        // Act: Retrieve using repository implementation
-        Optional<ProductAggregate> result = productRepository.findProductByProductIdAndBusinessId(product.id(), product.businessIdVO());
-
-        // --- Printout Data ---
-        if (result.isPresent()) {
-            ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-            try {
-                // Handle the checked exception using try-catch
-                String json = objectMapper.writeValueAsString(result.get());
-                System.out.println("\n=== RETRIEVED PRODUCT DATA ===");
-                System.out.println(json);
-                System.out.println("================================\n");
-            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                // In a test environment, you might just want to print the stack trace or fail the test explicitly
-                e.printStackTrace();
-                fail("Failed to serialize product to JSON for printing: " + e.getMessage());
-            }
-        } else {
-            System.out.println("No product found.");
-        }
-        // ----------------------
-
-        // Assert: Ensure the product was found
-        assertTrue(result.isPresent(), "Expected product to be found");
-        assertEquals(product.id().value(), result.get().id().value());
-        assertEquals(product.businessIdVO().value(), result.get().businessIdVO().value());
-
-        // Check if features are present in the first variant
-        assertFalse(result.get().variants().isEmpty(), "Expected product to have at least one variant");
-        Set<VariantEntity> variants = result.get().variants();
-        assertTrue(variants.stream().anyMatch(v -> !v.getFeatures().isEmpty()), "Expected at least one variant to have features");
-    }
-
-
-
-
-
 }

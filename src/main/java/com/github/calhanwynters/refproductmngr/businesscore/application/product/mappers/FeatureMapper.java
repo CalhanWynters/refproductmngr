@@ -1,88 +1,79 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers;
 
-import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.BasicFeatureDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.FeatureDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.FixedPriceFeatureDTO;
-import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.ScalingPriceFeatureDTO;
+import com.github.calhanwynters.refproductmngr.businesscore.application.product.dto.*;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.ProductAggregateFactory;
 
 /**
- * Central mapper for polymorphic Feature entities.
- * Implements bidirectional mapping between Domain Entities and Application DTOs.
+ * 2025 Central mapper for polymorphic Feature entities.
+ * Utilizes ProductAggregateFactory to ensure domain invariants are enforced.
  */
 public final class FeatureMapper {
 
-    private FeatureMapper() {} // Prevent instantiation
+    private FeatureMapper() {}
 
     /**
      * Maps Entity (Domain) -> DTO (Application)
-     * Used for output: sending data to the UI/API.
+     * Includes the 2025 isUnique property.
      */
     public static FeatureDTO toDTO(FeatureAbstractClass entity) {
         if (entity == null) return null;
 
-        // Extract shared domain properties once to keep the switch cases clean
         String id = entity.getId().value();
         String name = entity.getNameVO().value();
         String label = entity.getLabelVO().value();
         String desc = entity.getDescription() != null ? entity.getDescription().text() : null;
+        boolean isUnique = entity.isUnique();
 
         return switch (entity) {
-            case FeatureBasicEntity basic ->
-                    new BasicFeatureDTO(id, name, desc, label);
+            case FeatureBasicEntity ignored ->
+                    new BasicFeatureDTO(id, name, label, desc, isUnique);
 
             case FeatureFixedPriceEntity e ->
-                    new FixedPriceFeatureDTO(id, name, desc, label, e.getFixedPrice());
+                    new FixedPriceFeatureDTO(id, name, label, desc, isUnique, e.getFixedPrice());
 
             case FeatureScalingPriceEntity e ->
-                    new ScalingPriceFeatureDTO(id, name, desc, label,
+                    new ScalingPriceFeatureDTO(id, name, label, desc, isUnique,
                             e.getMeasurementUnit().unit(),
                             e.getBaseAmount(),
                             e.getIncrementAmount(),
                             e.getMaxQuantity());
 
-            default -> throw new IllegalArgumentException("Unknown feature value: " + entity.getClass());
+            default -> throw new IllegalArgumentException("Unknown feature type: " + entity.getClass());
         };
-
     }
 
     /**
      * Maps DTO (Application) -> Entity (Domain)
-     * Used for input: creating or updating features.
+     * Uses ProductAggregateFactory to enforce Always-Valid construction.
      */
     public static FeatureAbstractClass toEntity(FeatureDTO dto) {
         if (dto == null) return null;
 
-        // Convert the raw DTO string to a Domain Value Object
-        DescriptionVO domainDesc = dto.description() != null ? new DescriptionVO(dto.description()) : null;
+        // Shared Value Objects
+        NameVO nameVO = new NameVO(dto.name());
+        LabelVO labelVO = new LabelVO(dto.label());
+        DescriptionVO descVO = dto.description() != null ? new DescriptionVO(dto.description()) : null;
+        boolean isUnique = dto.isUnique();
+
+        // If ID is present (Update), reconstruct; if null (Create), let factory generate.
+        FeatureIdVO idVO = (dto.id() != null && !dto.id().isBlank())
+                ? FeatureIdVO.fromString(dto.id())
+                : null;
 
         return switch (dto) {
-            case BasicFeatureDTO d -> new FeatureBasicEntity(
-                    FeatureIdVO.fromString(d.id()),
-                    new NameVO(d.name()),
-                    domainDesc,
-                    new LabelVO(d.label())
-            );
+            case BasicFeatureDTO d -> idVO != null
+                    ? new FeatureBasicEntity(idVO, nameVO, descVO, labelVO, isUnique)
+                    : ProductAggregateFactory.createBasicFeature(nameVO, labelVO, descVO, isUnique);
 
-            case FixedPriceFeatureDTO d -> new FeatureFixedPriceEntity(
-                    FeatureIdVO.fromString(d.id()),
-                    new NameVO(d.name()),
-                    domainDesc,
-                    new LabelVO(d.label()),
-                    d.fixedPrice()
-            );
+            case FixedPriceFeatureDTO d -> idVO != null
+                    ? new FeatureFixedPriceEntity(idVO, nameVO, descVO, labelVO, d.fixedPrice(), isUnique)
+                    : ProductAggregateFactory.createFixedPriceFeature(nameVO, labelVO, descVO, d.fixedPrice(), isUnique);
 
-            case ScalingPriceFeatureDTO d -> new FeatureScalingPriceEntity(
-                    FeatureIdVO.fromString(d.id()),
-                    new NameVO(d.name()),
-                    domainDesc,
-                    new LabelVO(d.label()),
-                    new MeasurementUnitVO(d.measurementUnit()),
-                    d.baseAmount(),
-                    d.incrementAmount(),
-                    d.maxQuantity()
-            );
+            case ScalingPriceFeatureDTO d -> idVO != null
+                    ? new FeatureScalingPriceEntity(idVO, nameVO, descVO, labelVO, new MeasurementUnitVO(d.unit()), d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique)
+                    : ProductAggregateFactory.createScalingPriceFeature(nameVO, labelVO, descVO, new MeasurementUnitVO(d.unit()), d.baseAmount(), d.incrementAmount(), d.maxQuantity(), isUnique);
         };
     }
 }

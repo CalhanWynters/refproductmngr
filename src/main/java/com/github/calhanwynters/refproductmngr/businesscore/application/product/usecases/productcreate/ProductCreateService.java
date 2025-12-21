@@ -1,17 +1,17 @@
 package com.github.calhanwynters.refproductmngr.businesscore.application.product.usecases.productcreate;
 
+import com.github.calhanwynters.refproductmngr.businesscore.application.product.mappers.FeatureMapper;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.ProductCommandRepository;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.FeatureAbstractClass;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem.*;
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.Currency;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductCreateService {
@@ -23,42 +23,34 @@ public class ProductCreateService {
 
     @Transactional
     public void execute(ProductCreateCommand command) {
-        // 1. Create Value Objects (Validation happens here)
-        ProductIdVO productId = ProductIdVO.generate();
-        BusinessIdVO businessId = new BusinessIdVO(command.businessId());
-        CategoryVO category = new CategoryVO(command.category());
-        DescriptionVO description = new DescriptionVO(command.description());
+        // 1. Map Features
+        Set<FeatureAbstractClass> featureEntities = command.features().stream()
+                .map(FeatureMapper::toEntity)
+                .collect(Collectors.toSet());
 
-        List<ImageUrlVO> imageUrls = command.imageUrls().stream()
-                .map(ImageUrlVO::new)
-                .toList();
-        GalleryVO gallery = new GalleryVO(imageUrls);
-
-        // 2. Create the Initial Variant (DDD: Product must have at least 1 variant)
-        VariantEntity initialVariant = new VariantEntity(
-                VariantIdVO.generate(),
+        // 2. Build Initial Variant via Factory
+        VariantEntity initialVariant = ProductAggregateFactory.createVariant(
                 new SkuVO(command.initialVariantSku()),
                 new PriceVO(command.initialPrice(), 2, Currency.getInstance(command.currencyCode())),
                 new PriceVO(command.initialPrice(), 2, Currency.getInstance(command.currencyCode())),
-                Collections.emptySet(),
+                featureEntities,
                 new CareInstructionVO("Default instructions"),
-                new WeightVO(BigDecimal.ZERO, WeightUnitEnums.KILOGRAM),
+                new WeightVO(command.weightValue(), WeightUnitEnums.valueOf(command.weightUnit())),
                 VariantStatusEnums.DRAFT
         );
 
-        // 3. Instantiate the Aggregate Root
-        ProductAggregate product = new ProductAggregate(
-                productId,
-                businessId,
-                category,
-                description,
-                gallery,
-                Set.of(initialVariant),
-                new VersionVO(1), // Initial version
-                false // isDeleted = false
+        // 3. Assemble Aggregate via Factory
+        // We pass the business context values.
+        // The Factory will decide what the starting VersionVO(num) should be.
+        ProductAggregate product = ProductAggregateFactory.create(
+                new BusinessIdVO(command.businessId()),
+                new CategoryVO(command.category()),
+                new DescriptionVO(command.description()),
+                new GalleryVO(command.imageUrls().stream().map(ImageUrlVO::new).toList()),
+                Set.of(initialVariant)
         );
 
-        // 4. Persist (Triggers INSERT and Outbox Snapshot)
         productRepository.save(product);
     }
+
 }

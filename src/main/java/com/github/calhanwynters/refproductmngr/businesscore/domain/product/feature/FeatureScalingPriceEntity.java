@@ -24,9 +24,10 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
             MeasurementUnitVO measurementUnit, // Do not confuse with currency. This deals with metric or imperial units.
             BigDecimal baseAmount,  // starting amount at 0 units
             BigDecimal incrementAmount, // establishes price (without currency indicator) increase per unit.
-            int maxQuantity // establishes maximum quantity limit.
+            int maxQuantity, // establishes maximum quantity limit.
+            Boolean isUnique
     ) {
-        super(id, nameVO, description, labelVO);
+        super(id, nameVO, labelVO, description, isUnique);
 
         // Validation checks
         if (measurementUnit == null) {
@@ -82,10 +83,6 @@ public class FeatureScalingPriceEntity extends FeatureAbstractClass {
         return total.setScale(2, RoundingMode.HALF_UP);
     }
 
-    // --- Object Overrides (equals/hashCode/toString) ---
-    // The equals() and hashCode() from the abstract class are sufficient for entity identity,
-    // but were overridden in the previous code snippet to include all properties.
-    // I'll keep the previous structure but ensure correct accessor calls.
 
     @Override
     public boolean equals(Object o) {

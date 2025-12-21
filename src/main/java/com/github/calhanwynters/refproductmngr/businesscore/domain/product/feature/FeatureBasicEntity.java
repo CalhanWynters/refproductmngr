@@ -17,9 +17,10 @@ public class FeatureBasicEntity extends FeatureAbstractClass {
             FeatureIdVO id,
             NameVO nameVO,        // Changed from String name
             DescriptionVO description,
-            LabelVO labelVO       // Changed from String label
+            LabelVO labelVO,       // Changed from String label
+            Boolean isUnique
     ) {
         // Pass the new Value Objects up to the abstract superclass constructor
-        super(id, nameVO, description, labelVO);
+        super(id, nameVO, labelVO, description, isUnique);
     }
 }

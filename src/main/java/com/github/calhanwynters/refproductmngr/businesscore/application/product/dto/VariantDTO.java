@@ -18,4 +18,3 @@ public record VariantDTO(
         String weightUnit,      // e.g., "KILOGRAM"
         String status
 ) {}
-

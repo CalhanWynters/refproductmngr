@@ -1,41 +1,42 @@
 package com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature;
 
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
-
 import java.util.Objects;
 
 /**
- * Abstract base class for all product features, updated to use NameVO and LabelVO.
+ * Abstract base class for Product Features (Entities).
+ * Identity is determined by FeatureIdVO.
  */
 public abstract class FeatureAbstractClass {
     private final FeatureIdVO id;
-    private final NameVO nameVO;      // Changed from String name
-    private final DescriptionVO description;
-    private final LabelVO labelVO;    // Changed from String label
+    private final NameVO nameVO;
+    private final LabelVO labelVO;
+    private final DescriptionVO description; // Optional
+    private final boolean isUnique;
 
-    /**
-     * Constructor enforces non-null checks for ID, NameVO, and LabelVO.
-     * Description can be null.
-     */
-    public FeatureAbstractClass(FeatureIdVO id, NameVO nameVO, DescriptionVO description, LabelVO labelVO) {
+    protected FeatureAbstractClass(
+            FeatureIdVO id,
+            NameVO nameVO,
+            LabelVO labelVO,
+            DescriptionVO description,
+            boolean isUnique) {
         this.id = Objects.requireNonNull(id, "Feature ID must not be null");
         this.nameVO = Objects.requireNonNull(nameVO, "Feature Name VO must not be null");
         this.labelVO = Objects.requireNonNull(labelVO, "Feature Label VO must not be null");
-
         this.description = description;
+        this.isUnique = isUnique; // A boolean value to turn true if feature is unique for use on only 1 variant.
     }
 
-    // Getters
     public FeatureIdVO getId() { return id; }
-    public NameVO getNameVO() { return nameVO; }       // Updated getter name
+    public NameVO getNameVO() { return nameVO; }
+    public LabelVO getLabelVO() { return labelVO; }
     public DescriptionVO getDescription() { return description; }
-    public LabelVO getLabelVO() { return labelVO; }   // Updated getter name
+    public boolean isUnique() { return isUnique; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FeatureAbstractClass that = (FeatureAbstractClass) o;
+        if (!(o instanceof FeatureAbstractClass that)) return false;
         return Objects.equals(id, that.id);
     }
 

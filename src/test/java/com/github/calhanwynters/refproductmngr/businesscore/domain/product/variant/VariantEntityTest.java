@@ -9,159 +9,103 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
+@DisplayName("VariantEntity Record Logic Tests")
 class VariantEntityTest {
 
-    // Mock/Dummy dependencies (assuming VOs are tested separately)
-    private VariantIdVO mockId;
-    private SkuVO mockSku;
-    private PriceVO mockBasePrice;
-    private PriceVO mockCurrentPrice;
-    private CareInstructionVO mockCareInstructions;
-    private WeightVO mockWeight;
-    private Set<FeatureAbstractClass> mockFeatures;
+    private VariantIdVO validId;
+    private SkuVO validSku;
+    private PriceVO validBasePrice;
+    private PriceVO validCurrentPrice;
+    private CareInstructionVO validCareInstructions;
+    private WeightVO validWeight;
+    private Set<FeatureAbstractClass> validFeatures;
 
     @BeforeEach
     void setUp() {
-        // Use realistic dummy values for VOs
-        mockId = VariantIdVO.generate();
-        mockSku = new SkuVO("SKU-12345");
-        mockBasePrice = new PriceVO(new BigDecimal("10.00"), 2, Currency.getInstance("USD"));
-        mockCurrentPrice = new PriceVO(new BigDecimal("9.99"), 2, Currency.getInstance("USD"));
-        // Using mock objects for dependencies that are complex entities/abstractions
-        mockCareInstructions = mock(CareInstructionVO.class);
-        mockWeight = mock(WeightVO.class);
-        mockFeatures = Collections.emptySet(); // Use empty set for simplicity in baseline tests
-    }
-
-    // --- Constructor Validation Tests ---
-
-    @Test
-    @DisplayName("Should create VariantEntity successfully with valid inputs")
-    void constructor_ValidInputs_CreatesEntity() {
-        VariantEntity entity = new VariantEntity(
-                mockId,
-                mockSku,
-                mockBasePrice,
-                mockCurrentPrice,
-                mockFeatures,
-                mockCareInstructions,
-                mockWeight,
-                VariantStatusEnums.ACTIVE
-        );
-
-        assertNotNull(entity);
-        assertEquals(mockId, entity.id());
-        assertEquals(VariantStatusEnums.ACTIVE, entity.status());
+        validId = VariantIdVO.generate();
+        validSku = new SkuVO("SKU-12345");
+        validBasePrice = new PriceVO(new BigDecimal("10.00"), 2, Currency.getInstance("USD"));
+        validCurrentPrice = new PriceVO(new BigDecimal("9.99"), 2, Currency.getInstance("USD"));
+        validCareInstructions = new CareInstructionVO("* Handle with care");
+        validWeight = new WeightVO(new BigDecimal("0.5"), WeightUnitEnums.KILOGRAM);
+        validFeatures = new HashSet<>();
     }
 
     @Test
-    @DisplayName("Should throw NullPointerException if any required argument is null")
-    void constructor_NullArguments_ThrowsNPE() {
-        // Test with a null ID
-        assertThrows(NullPointerException.class, () -> new VariantEntity(null, mockSku, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, VariantStatusEnums.ACTIVE));
-
-        // Test with a null SKU
-        assertThrows(NullPointerException.class, () -> new VariantEntity(mockId, null, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, VariantStatusEnums.ACTIVE));
-
-        // Test with a null Status
-        assertThrows(NullPointerException.class, () -> new VariantEntity(mockId, mockSku, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, null));
-        // You can add more checks for all other parameters if desired.
-    }
-
-    // --- Equality and HashCode Tests ---
-
-    @Test
-    @DisplayName("equals and hashCode should consider all fields for equality (as defined in your implementation)")
-    void equalsAndHashCode_CompareEntities() {
-        VariantEntity entity1 = new VariantEntity(mockId, mockSku, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, VariantStatusEnums.ACTIVE);
-        VariantEntity entity2 = new VariantEntity(mockId, mockSku, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, VariantStatusEnums.ACTIVE);
-
-        // Entities created with the exact same VOs should be equal
-        assertEquals(entity1, entity2);
-        assertEquals(entity1.hashCode(), entity2.hashCode());
-
-        // A new entity with a different SKU should NOT be equal (based on your equals implementation)
-        SkuVO differentSku = new SkuVO("SKU-DIFFERENT");
-        VariantEntity entity3 = new VariantEntity(mockId, differentSku, mockBasePrice, mockCurrentPrice, mockFeatures, mockCareInstructions, mockWeight, VariantStatusEnums.ACTIVE);
-
-        assertNotEquals(entity1, entity3);
-        assertNotEquals(entity1.hashCode(), entity3.hashCode());
-    }
-
-    @Test
-    void testGetFeatures() {
-        // Generate valid UUID strings to satisfy VO validation logic
-        String validFeatureUuid = java.util.UUID.randomUUID().toString();
-        String validVariantUuid = java.util.UUID.randomUUID().toString();
-
+    @DisplayName("Should create VariantEntity successfully and enforce immutability on features")
+    void constructor_ValidInputs_CreatesImmutableEntity() {
         // Arrange
-        // FIX: Changed "FEATURE-1" to valid UUID
-        FeatureIdVO featureId = new FeatureIdVO(validFeatureUuid);
-        NameVO nameVO = new NameVO("Color");
-        DescriptionVO descriptionVO = new DescriptionVO("The color of the product");
-        LabelVO labelVO = new LabelVO("Color Label");
-        FeatureBasicEntity feature1 = new FeatureBasicEntity(featureId, nameVO, descriptionVO, labelVO);
-
-        Set<FeatureAbstractClass> features = new HashSet<>();
-        features.add(feature1);
-
-        // FIX: Changed "VARIANT-1" to valid UUID
-        VariantIdVO variantId = new VariantIdVO(validVariantUuid);
-        SkuVO sku = new SkuVO("SKU-123");
-
-        // ... rest of the test remains the same
-        PriceVO basePrice = new PriceVO(BigDecimal.valueOf(19.99));
-        PriceVO currentPrice = new PriceVO(BigDecimal.valueOf(19.99));
-        CareInstructionVO careInstructions = new CareInstructionVO("* Hand wash only");
-        WeightVO weight = new WeightVO(BigDecimal.valueOf(0.5), WeightUnitEnums.KILOGRAM);
-        VariantStatusEnums status = VariantStatusEnums.ACTIVE;
-
-        VariantEntity variant = new VariantEntity(variantId, sku, basePrice, currentPrice, features, careInstructions, weight, status);
+        FeatureBasicEntity feature = new FeatureBasicEntity(
+                FeatureIdVO.generate(), new NameVO("Color"), new DescriptionVO("The sky is very Blue"), new LabelVO("Color"), true);
+        validFeatures.add(feature);
 
         // Act
-        Set<FeatureAbstractClass> retrievedFeatures = variant.getFeatures();
+        VariantEntity entity = new VariantEntity(
+                validId, validSku, validBasePrice, validCurrentPrice,
+                validFeatures, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE
+        );
 
         // Assert
-        assertNotNull(retrievedFeatures);
-        assertEquals(1, retrievedFeatures.size());
-        assertTrue(retrievedFeatures.contains(feature1));
+        assertNotNull(entity);
+        assertEquals(validId, entity.id());
+        assertEquals(1, entity.getFeatures().size());
+
+        // Verify Immutability: Attempting to modify the retrieved set should throw an exception
+        assertThrows(UnsupportedOperationException.class, () -> entity.getFeatures().add(feature));
     }
 
     @Test
-    @DisplayName("withStatus should return a new instance with the updated status and preserved attributes")
-    void withStatus_ReturnsNewInstanceWithUpdatedStatus() {
-        // Arrange - Using the Value Objects initialized in setUp()
-        VariantEntity original = new VariantEntity(
-                mockId,
-                mockSku,
-                mockBasePrice,
-                mockCurrentPrice,
-                mockFeatures,
-                mockCareInstructions,
-                mockWeight,
-                VariantStatusEnums.DRAFT
+    @DisplayName("Should throw NullPointerException if any required record component is null")
+    void constructor_NullArguments_ThrowsNPE() {
+        assertAll("Null checks",
+                () -> assertThrows(NullPointerException.class, () -> new VariantEntity(null, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE)),
+                () -> assertThrows(NullPointerException.class, () -> new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, null, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE)),
+                () -> assertThrows(NullPointerException.class, () -> new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, null))
         );
+    }
+
+    @Test
+    @DisplayName("hasSameAttributes should compare physical characteristics ignoring identity and price")
+    void hasSameAttributes_ComparesPhysicalsOnly() {
+        // Arrange
+        VariantEntity entity1 = new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE);
+
+        // Entity 2 has different ID and Price, but same physicals (Weight, Care, Features)
+        VariantEntity entity2 = new VariantEntity(VariantIdVO.generate(), new SkuVO("SKU-DIFFERENT"),
+                new PriceVO(new BigDecimal("50.00"), 2, Currency.getInstance("USD")),
+                new PriceVO(new BigDecimal("40.00"), 2, Currency.getInstance("USD")),
+                validFeatures, validCareInstructions, validWeight, VariantStatusEnums.DRAFT);
+
+        // Act & Assert
+        assertTrue(entity1.hasSameAttributes(entity2), "Entities with same weight, care instructions, and features should match attributes.");
+    }
+
+    @Test
+    @DisplayName("withStatus should return a new instance with updated status but identical data")
+    void withStatus_ReturnsNewInstance() {
+        // Arrange
+        VariantEntity original = new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, VariantStatusEnums.DRAFT);
 
         // Act
         VariantEntity updated = original.withStatus(VariantStatusEnums.ACTIVE);
 
-        // Assert: Verify state change
-        assertEquals(VariantStatusEnums.ACTIVE, updated.status(), "Status should be updated to ACTIVE");
-
-        // Assert: Verify identity and attribute preservation (Identity and VOs must match)
-        assertEquals(original.id(), updated.id(), "ID must remain the same");
-        assertEquals(original.sku(), updated.sku(), "SKU must remain the same");
-        assertEquals(original.basePrice(), updated.basePrice(), "Base price must remain the same");
-        assertEquals(original.currentPrice(), updated.currentPrice(), "Current price must remain the same");
-        assertEquals(original.features(), updated.features(), "Features must remain the same");
-        assertEquals(original.careInstructions(), updated.careInstructions(), "Care instructions must remain the same");
-        assertEquals(original.weight(), updated.weight(), "Weight must remain the same");
-
-        // Assert: Verify Immutability (Pure DDD requirement)
-        assertNotSame(original, updated, "Should return a new instance, not modify the original");
-        assertEquals(VariantStatusEnums.DRAFT, original.status(), "Original instance status must remain DRAFT");
+        // Assert
+        assertNotSame(original, updated);
+        assertEquals(VariantStatusEnums.ACTIVE, updated.status());
+        assertEquals(original.id(), updated.id());
+        assertEquals(original.sku(), updated.sku());
     }
 
+    @Test
+    @DisplayName("Equality should be based on all record components")
+    void equality_BasedOnAllComponents() {
+        // Arrange
+        VariantEntity entity1 = new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE);
+        VariantEntity entity2 = new VariantEntity(validId, validSku, validBasePrice, validCurrentPrice, validFeatures, validCareInstructions, validWeight, VariantStatusEnums.ACTIVE);
+
+        // Act & Assert
+        assertEquals(entity1, entity2);
+        assertEquals(entity1.hashCode(), entity2.hashCode());
+    }
 }

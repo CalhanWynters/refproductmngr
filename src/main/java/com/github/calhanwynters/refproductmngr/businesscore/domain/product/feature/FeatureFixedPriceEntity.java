@@ -1,15 +1,10 @@
 package com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature;
 
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
-
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-/**
- * A feature that adds a fixed amount to the base price (e.g., gift wrapping service).
- * Implemented as an immutable entity, using Value Objects for name/label and BigDecimal for price accuracy.
- */
 public class FeatureFixedPriceEntity extends FeatureAbstractClass {
-    // Use BigDecimal for financial accuracy and make the field final
     private final BigDecimal fixedPrice;
 
     public FeatureFixedPriceEntity(
@@ -17,11 +12,11 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
             NameVO nameVO,
             DescriptionVO description,
             LabelVO labelVO,
-            BigDecimal fixedPrice
+            BigDecimal fixedPrice,
+            Boolean isUnique
     ) {
-        super(id, nameVO, description, labelVO);
+        super(id, nameVO, labelVO, description, isUnique);
 
-        // Check for null here
         if (fixedPrice == null) {
             throw new IllegalArgumentException("Fixed price must not be null.");
         }
@@ -29,12 +24,12 @@ public class FeatureFixedPriceEntity extends FeatureAbstractClass {
         if (fixedPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Fixed price cannot be negative.");
         }
-        this.fixedPrice = fixedPrice;
+
+        // Normalize to 2 decimal places for consistent currency handling
+        this.fixedPrice = fixedPrice.setScale(2, RoundingMode.HALF_UP);
     }
 
-    // Public Getter for fixedPrice
     public BigDecimal getFixedPrice() {
         return fixedPrice;
     }
-
 }

@@ -1,27 +1,58 @@
 package com.github.calhanwynters.refproductmngr.businesscore.domain.product.productitem;
 
 import com.github.calhanwynters.refproductmngr.businesscore.domain.product.common.DescriptionVO;
-import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.VariantEntity;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.feature.*;
+import com.github.calhanwynters.refproductmngr.businesscore.domain.product.variant.*;
 
-import java.util.Objects;
+import java.math.BigDecimal;
 import java.util.Set;
 
 /**
- * Factory for ProductAggregate.
- * Enforces 2025 DDD invariants: mandatory variants and proper lifecycle initialization.
+ * Full-Service Factory for ProductAggregate in 2025.
+ * Coordinates creation across the deep graph: Features -> Variants -> Product.
  */
 public class ProductAggregateFactory {
 
+    // --- FEATURE CREATION ---
+
+    public static FeatureBasicEntity createBasicFeature(
+            NameVO name, LabelVO label, DescriptionVO desc, boolean isUnique) {
+        return new FeatureBasicEntity(FeatureIdVO.generate(), name, desc, label, isUnique);
+    }
+
+    public static FeatureFixedPriceEntity createFixedPriceFeature(
+            NameVO name, LabelVO label, DescriptionVO desc, BigDecimal price, boolean isUnique) {
+        return new FeatureFixedPriceEntity(FeatureIdVO.generate(), name, desc, label, price, isUnique);
+    }
+
+    public static FeatureScalingPriceEntity createScalingPriceFeature(
+            NameVO name, LabelVO label, DescriptionVO desc, MeasurementUnitVO unit,
+            BigDecimal base, BigDecimal increment, int max, boolean isUnique) {
+        return new FeatureScalingPriceEntity(
+                FeatureIdVO.generate(), name, desc, label, unit, base, increment, max, isUnique);
+    }
+
+    // --- VARIANT CREATION ---
+
+    public static VariantEntity createVariant(
+            SkuVO sku, PriceVO basePrice, PriceVO currentPrice,
+            Set<FeatureAbstractClass> features, CareInstructionVO care,
+            WeightVO weight, VariantStatusEnums status) {
+
+        // Factory provides the ID and ensures features set isn't null
+        return new VariantEntity(
+                VariantIdVO.generate(),
+                sku, basePrice, currentPrice,
+                features != null ? features : Set.of(),
+                care, weight, status
+        );
+    }
+
+    // --- AGGREGATE CREATION ---
+
     /**
-     * Creates a new ProductAggregate with a generated ID and initial state.
-     * Use this for creating entirely new products in the system.
-     *
-     * @param businessIdVO Mandatory business owner ID.
-     * @param category Mandatory product category.
-     * @param description Mandatory product description.
-     * @param gallery Mandatory gallery (can be empty, but not null).
-     * @param initialVariants At least one variant is required per 2025 invariants.
-     * @return A valid, non-deleted ProductAggregate at version 0.
+     * Creates a NEW ProductAggregate.
+     * Enforces the mandatory initial variant invariant.
      */
     public static ProductAggregate create(
             BusinessIdVO businessIdVO,
@@ -30,46 +61,29 @@ public class ProductAggregateFactory {
             GalleryVO gallery,
             Set<VariantEntity> initialVariants
     ) {
-        // Enforce the 'Minimum One Variant' invariant at the factory level
         if (initialVariants == null || initialVariants.isEmpty()) {
-            throw new IllegalArgumentException("Creation failed: A product must have at least one initial variant.");
+            throw new IllegalArgumentException("A product must have at least one variant.");
         }
 
         return new ProductAggregate(
-                ProductIdVO.generate(), // Internal ID generation
+                ProductIdVO.generate(),
                 businessIdVO,
                 category,
                 description,
                 gallery,
                 initialVariants,
-                new VersionVO(0),       // New products start at version 0
-                false                   // New products are not deleted by default
+                new VersionVO(1), // Starting business version, NOT a DB lock
+                false
         );
     }
 
     /**
-     * Reconstructs an existing ProductAggregate from persistence.
-     * Use this when loading data from a database/repository.
+     * Reconstructs an existing ProductAggregate (Bypasses ID generation and default versioning).
      */
     public static ProductAggregate reconstruct(
-            ProductIdVO id,
-            BusinessIdVO businessIdVO,
-            CategoryVO category,
-            DescriptionVO description,
-            GalleryVO gallery,
-            Set<VariantEntity> variants,
-            VersionVO version,
-            boolean isDeleted
-    ) {
-        return new ProductAggregate(
-                id,
-                businessIdVO,
-                category,
-                description,
-                gallery,
-                variants,
-                version,
-                isDeleted
-        );
+            ProductIdVO id, BusinessIdVO businessId, CategoryVO category,
+            DescriptionVO desc, GalleryVO gallery, Set<VariantEntity> variants,
+            VersionVO version, boolean isDeleted) {
+        return new ProductAggregate(id, businessId, category, desc, gallery, variants, version, isDeleted);
     }
 }
